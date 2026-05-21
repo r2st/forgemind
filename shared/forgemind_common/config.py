@@ -68,6 +68,18 @@ class Settings(BaseSettings):
         default="forgemind",
         description="TrueFoundry workspace name used for deploys.",
     )
+    tfy_control_plane_url: str = Field(
+        default="https://app.truefoundry.com",
+        description="TrueFoundry control-plane URL (used for MCP server discovery).",
+    )
+    tfy_mcp_namespace: str = Field(
+        default="truefoundry",
+        description="Tenant/namespace under which MCP servers are registered.",
+    )
+    tfy_mcp_enabled_servers: list[str] = Field(
+        default_factory=lambda: ["common-tools", "deepwiki0"],
+        description="Which MCP servers to bind into Hermes tool registries.",
+    )
 
     # Logical model tiers — the gateway maps these to concrete providers.
     tfy_model_fast: str = "openai-main/gpt-4o-mini"

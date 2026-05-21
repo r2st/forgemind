@@ -10,4 +10,5 @@ sqlalchemy[asyncio]==2.0.29
 asyncpg==0.29.0
 python-jose[cryptography]==3.3.0
 hermes-agent @ git+https://github.com/NousResearch/hermes-agent.git
+fastmcp==2.13.0
 -e /app/shared

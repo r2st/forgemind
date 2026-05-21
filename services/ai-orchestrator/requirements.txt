@@ -11,4 +11,5 @@ asyncpg==0.29.0
 pgvector==0.2.5
 python-jose[cryptography]==3.3.0
 hermes-agent @ git+https://github.com/NousResearch/hermes-agent.git
+fastmcp==2.13.0
 -e /app/shared

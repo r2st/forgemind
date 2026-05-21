@@ -23,6 +23,7 @@ from .hermes_runtime import (
     new_runtime,
     HERMES_AVAILABLE,
 )
+from .mcp_gateway import TrueFoundryMCPGateway, MCPServerInfo, get_mcp_gateway
 
 __version__ = "0.1.0"
 
@@ -50,4 +51,7 @@ __all__ = [
     "get_activity_ledger",
     "new_runtime",
     "HERMES_AVAILABLE",
+    "TrueFoundryMCPGateway",
+    "MCPServerInfo",
+    "get_mcp_gateway",
 ]

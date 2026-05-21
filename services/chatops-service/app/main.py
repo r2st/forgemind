@@ -14,15 +14,32 @@ from pydantic import BaseModel
 from forgemind_common import get_logger, setup_logging
 from forgemind_common.observability import install_metrics
 
-from .agent import build_chatops_agent
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
+
+from .agent import build_chatops_agent, build_chatops_agent_with_mcp
 
 setup_logging("chatops-service")
 log = get_logger(__name__)
 
-app = FastAPI(title="ForgeMind ChatOps Service", version="0.1.0")
-install_metrics(app, "chatops-service")
-
+# Built once at startup with MCP tools merged in. We assign a placeholder
+# now and replace it in the lifespan handler.
 agent = build_chatops_agent()
+
+
+@asynccontextmanager
+async def lifespan(_: FastAPI) -> AsyncIterator[None]:
+    global agent
+    try:
+        agent = await build_chatops_agent_with_mcp()
+        log.info("chatops.mcp_tools_loaded", count=len(agent.tools._tools))
+    except Exception:  # noqa: BLE001
+        log.exception("chatops.mcp_init_failed")
+    yield
+
+
+app = FastAPI(title="ForgeMind ChatOps Service", version="0.1.0", lifespan=lifespan)
+install_metrics(app, "chatops-service")
 
 # Naive in-memory session store; production would use Redis.
 SESSIONS: dict[str, list[dict[str, Any]]] = {}
