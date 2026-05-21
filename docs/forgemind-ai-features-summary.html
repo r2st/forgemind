@@ -1,0 +1,824 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>ForgeMind AI Features Summary</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg: #080b10;
+        --surface: rgba(15, 21, 31, 0.86);
+        --surface-strong: #121a26;
+        --line: rgba(148, 163, 184, 0.22);
+        --line-strong: rgba(148, 163, 184, 0.36);
+        --text: #edf4ff;
+        --muted: #aeb9c9;
+        --soft: #7d899a;
+        --cyan: #4dd7ff;
+        --green: #76e3aa;
+        --amber: #f6c76d;
+        --red: #ff8490;
+        --shadow: 0 24px 90px rgba(0, 0, 0, 0.38);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html {
+        scroll-behavior: smooth;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        background:
+          radial-gradient(circle at 88% 12%, rgba(77, 215, 255, 0.12), transparent 28rem),
+          radial-gradient(circle at 12% 82%, rgba(118, 227, 170, 0.1), transparent 26rem),
+          linear-gradient(135deg, #080b10 0%, #0d131c 56%, #070a0f 100%);
+        color: var(--text);
+        font-family:
+          Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+          sans-serif;
+        line-height: 1.55;
+      }
+
+      a {
+        color: inherit;
+        text-decoration: none;
+      }
+
+      .shell {
+        display: grid;
+        grid-template-columns: 288px minmax(0, 1fr);
+        gap: 34px;
+        min-height: 100vh;
+      }
+
+      .toc {
+        position: sticky;
+        top: 0;
+        height: 100vh;
+        padding: 22px 0 22px 22px;
+      }
+
+      .toc-card {
+        height: calc(100vh - 44px);
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: rgba(8, 12, 18, 0.78);
+        box-shadow: var(--shadow);
+        backdrop-filter: blur(18px);
+      }
+
+      .toc-head {
+        padding: 20px 20px 16px;
+        border-bottom: 1px solid var(--line);
+      }
+
+      .kicker {
+        color: var(--green);
+        font-size: 0.72rem;
+        font-weight: 850;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+      }
+
+      .toc-title {
+        margin-top: 8px;
+        font-size: 1.16rem;
+        font-weight: 850;
+      }
+
+      .toc-subtitle {
+        margin: 4px 0 0;
+        color: var(--muted);
+        font-size: 0.86rem;
+      }
+
+      .toc-nav {
+        padding: 12px;
+        overflow-y: auto;
+      }
+
+      .toc-nav a {
+        display: block;
+        border: 1px solid transparent;
+        border-radius: 8px;
+        padding: 8px 10px;
+        color: var(--muted);
+        font-size: 0.88rem;
+        transition:
+          color 160ms ease,
+          background 160ms ease,
+          border-color 160ms ease,
+          transform 160ms ease;
+      }
+
+      .toc-nav a:hover,
+      .toc-nav a.active {
+        color: var(--text);
+        background: rgba(77, 215, 255, 0.1);
+        border-color: rgba(77, 215, 255, 0.28);
+        transform: translateX(3px);
+      }
+
+      .toc-foot {
+        margin-top: auto;
+        padding: 14px 18px 18px;
+        border-top: 1px solid var(--line);
+        color: var(--soft);
+        font-size: 0.78rem;
+      }
+
+      main {
+        width: min(1120px, calc(100vw - 360px));
+        padding: 28px 34px 76px 0;
+      }
+
+      .hero {
+        min-height: 54vh;
+        display: grid;
+        align-items: center;
+        padding: 48px 0 24px;
+      }
+
+      .hero-panel {
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background:
+          linear-gradient(145deg, rgba(18, 26, 38, 0.94), rgba(8, 12, 18, 0.92)),
+          repeating-linear-gradient(
+            90deg,
+            rgba(255, 255, 255, 0.028) 0,
+            rgba(255, 255, 255, 0.028) 1px,
+            transparent 1px,
+            transparent 58px
+          );
+        box-shadow: var(--shadow);
+        padding: 44px;
+      }
+
+      .eyebrow {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        color: var(--green);
+        font-size: 0.72rem;
+        font-weight: 850;
+        letter-spacing: 0.13em;
+        text-transform: uppercase;
+      }
+
+      .eyebrow::before {
+        content: "";
+        width: 9px;
+        height: 9px;
+        border-radius: 50%;
+        background: var(--green);
+        box-shadow: 0 0 18px rgba(118, 227, 170, 0.72);
+      }
+
+      h1 {
+        margin: 18px 0 16px;
+        max-width: 860px;
+        font-size: clamp(2.7rem, 6.5vw, 5.7rem);
+        line-height: 0.94;
+        letter-spacing: 0;
+      }
+
+      .lede {
+        max-width: 880px;
+        margin: 0;
+        color: #c9d5e5;
+        font-size: clamp(1.05rem, 1.6vw, 1.3rem);
+      }
+
+      .hero-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        margin-top: 28px;
+      }
+
+      .button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 42px;
+        border-radius: 8px;
+        padding: 0 16px;
+        border: 1px solid var(--line-strong);
+        color: var(--text);
+        background: rgba(255, 255, 255, 0.045);
+        font-size: 0.9rem;
+        font-weight: 780;
+      }
+
+      .button.primary {
+        background: linear-gradient(135deg, #37c9f4, #58dc9d);
+        border-color: transparent;
+        color: #041017;
+      }
+
+      section {
+        scroll-margin-top: 24px;
+        margin-top: 24px;
+      }
+
+      .summary-strip {
+        border: 1px solid rgba(118, 227, 170, 0.28);
+        border-radius: 8px;
+        background: rgba(118, 227, 170, 0.08);
+        padding: 22px;
+      }
+
+      .summary-strip strong {
+        display: block;
+        color: var(--text);
+        font-size: 1.08rem;
+        margin-bottom: 6px;
+      }
+
+      .summary-strip p {
+        margin: 0;
+        color: #cad8e8;
+        font-size: 1.02rem;
+      }
+
+      .feature-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 14px;
+      }
+
+      .feature {
+        min-height: 250px;
+        display: flex;
+        flex-direction: column;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: var(--surface);
+        box-shadow: 0 18px 60px rgba(0, 0, 0, 0.16);
+        overflow: hidden;
+      }
+
+      .feature-head {
+        display: grid;
+        grid-template-columns: 38px minmax(0, 1fr);
+        gap: 12px;
+        align-items: center;
+        padding: 16px 16px 12px;
+        border-bottom: 1px solid var(--line);
+      }
+
+      .number {
+        width: 38px;
+        height: 38px;
+        border-radius: 8px;
+        display: grid;
+        place-items: center;
+        background: rgba(77, 215, 255, 0.12);
+        border: 1px solid rgba(77, 215, 255, 0.3);
+        color: var(--cyan);
+        font-weight: 900;
+      }
+
+      h2 {
+        margin: 0;
+        font-size: 1.05rem;
+        line-height: 1.18;
+        letter-spacing: 0;
+      }
+
+      .feature-body {
+        padding: 16px;
+        display: grid;
+        gap: 12px;
+      }
+
+      .plain {
+        margin: 0;
+        color: #c9d5e5;
+      }
+
+      .label {
+        color: var(--soft);
+        font-size: 0.72rem;
+        font-weight: 850;
+        letter-spacing: 0.09em;
+        text-transform: uppercase;
+      }
+
+      ul {
+        margin: 0;
+        padding-left: 18px;
+        color: var(--muted);
+      }
+
+      li {
+        margin: 4px 0;
+      }
+
+      .example {
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: rgba(0, 0, 0, 0.22);
+        padding: 12px;
+        color: #d9e6f5;
+        font-size: 0.92rem;
+      }
+
+      .timeline {
+        display: grid;
+        gap: 8px;
+      }
+
+      .timeline-row {
+        display: grid;
+        grid-template-columns: 72px minmax(0, 1fr);
+        gap: 10px;
+        align-items: start;
+      }
+
+      .time {
+        color: var(--cyan);
+        font-weight: 850;
+        font-size: 0.84rem;
+      }
+
+      .timeline-row span:last-child {
+        color: var(--muted);
+        font-size: 0.92rem;
+      }
+
+      .wide {
+        grid-column: span 2;
+      }
+
+      .accent-green {
+        border-top: 3px solid var(--green);
+      }
+
+      .accent-cyan {
+        border-top: 3px solid var(--cyan);
+      }
+
+      .accent-amber {
+        border-top: 3px solid var(--amber);
+      }
+
+      .accent-red {
+        border-top: 3px solid var(--red);
+      }
+
+      .footer-note {
+        margin-top: 26px;
+        color: var(--soft);
+        font-size: 0.86rem;
+      }
+
+      @media (max-width: 1180px) {
+        .shell {
+          grid-template-columns: 1fr;
+        }
+
+        .toc {
+          position: fixed;
+          left: 12px;
+          right: 12px;
+          top: 12px;
+          height: auto;
+          padding: 0;
+          z-index: 20;
+          pointer-events: none;
+        }
+
+        .toc-card {
+          height: auto;
+          max-height: 70px;
+          pointer-events: auto;
+          transition: max-height 180ms ease;
+        }
+
+        .toc-card:hover,
+        .toc-card:focus-within {
+          max-height: 78vh;
+        }
+
+        .toc-head {
+          padding: 14px 16px;
+        }
+
+        .toc-title {
+          margin-top: 4px;
+        }
+
+        .toc-subtitle,
+        .toc-foot {
+          display: none;
+        }
+
+        .toc-nav {
+          border-top: 1px solid var(--line);
+        }
+
+        main {
+          width: min(100%, 1040px);
+          margin: 0 auto;
+          padding: 86px 18px 58px;
+        }
+
+        .hero {
+          min-height: auto;
+          padding-top: 28px;
+        }
+
+        .feature-grid {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+      }
+
+      @media (max-width: 760px) {
+        .feature-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .wide {
+          grid-column: span 1;
+        }
+
+        .hero-panel {
+          padding: 26px;
+        }
+
+        h1 {
+          font-size: 3rem;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="shell">
+      <aside class="toc" aria-label="Feature table of contents">
+        <div class="toc-card">
+          <div class="toc-head">
+            <div class="kicker">Simple Summary</div>
+            <div class="toc-title">ForgeMind AI</div>
+            <p class="toc-subtitle">Features explained in plain English</p>
+          </div>
+          <nav class="toc-nav">
+            <a href="#machine-monitoring">Machine Monitoring</a>
+            <a href="#anomaly-detection">Anomaly Detection</a>
+            <a href="#predictive-maintenance">Predictive Maintenance</a>
+            <a href="#root-cause-analysis">Root Cause Analysis</a>
+            <a href="#production-optimization">Production Optimization</a>
+            <a href="#factory-chat-assistant">AI Factory Chat Assistant</a>
+            <a href="#autonomous-agents">Autonomous AI Agents</a>
+            <a href="#operational-memory">Operational Memory</a>
+            <a href="#incident-timeline">Incident Timeline</a>
+            <a href="#executive-reports">Executive Reports</a>
+            <a href="#real-time-dashboard">Real-Time Dashboard</a>
+            <a href="#multi-model-routing">Multi-Model AI Routing</a>
+            <a href="#ai-observability">AI Observability</a>
+            <a href="#autoscaling">Autoscaling</a>
+            <a href="#human-approval">Human Approval Workflow</a>
+          </nav>
+          <div class="toc-foot">Short descriptions for product walkthroughs and non-technical audiences.</div>
+        </div>
+      </aside>
+
+      <main>
+        <header class="hero">
+          <div class="hero-panel">
+            <div class="eyebrow">Features explained simply</div>
+            <h1>ForgeMind AI in plain English</h1>
+            <p class="lede">
+              A simple summary of what ForgeMind AI does for factory teams: it watches machines,
+              detects issues, predicts failures, explains problems, and helps managers make better
+              operational decisions.
+            </p>
+            <div class="hero-actions">
+              <a class="button primary" href="#machine-monitoring">Read features</a>
+              <a class="button" href="forgemind-ai-platform.html">Open full platform docs</a>
+            </div>
+          </div>
+        </header>
+
+        <section class="summary-strip" id="one-line-summary">
+          <strong>Simple one-line summary</strong>
+          <p>
+            ForgeMind AI is an autonomous AI copilot that monitors factory operations,
+            predicts failures, investigates problems, and helps optimize manufacturing using
+            multiple AI agents.
+          </p>
+        </section>
+
+        <section class="feature-grid" aria-label="ForgeMind AI feature summary">
+          <article class="feature accent-cyan" id="machine-monitoring">
+            <div class="feature-head">
+              <div class="number">1</div>
+              <h2>Machine Monitoring</h2>
+            </div>
+            <div class="feature-body">
+              <p class="plain">The system continuously watches factory machines.</p>
+              <div>
+                <div class="label">Checks</div>
+                <ul>
+                  <li>temperature</li>
+                  <li>vibration</li>
+                  <li>speed</li>
+                  <li>production rate</li>
+                  <li>errors</li>
+                </ul>
+              </div>
+              <div class="example">Like a smart AI supervisor for machines.</div>
+            </div>
+          </article>
+
+          <article class="feature accent-amber" id="anomaly-detection">
+            <div class="feature-head">
+              <div class="number">2</div>
+              <h2>Anomaly Detection</h2>
+            </div>
+            <div class="feature-body">
+              <p class="plain">AI detects unusual behavior automatically, often before humans notice it.</p>
+              <div>
+                <div class="label">Examples</div>
+                <ul>
+                  <li>machine overheating</li>
+                  <li>sudden slowdown</li>
+                  <li>abnormal vibration</li>
+                  <li>production drop</li>
+                </ul>
+              </div>
+            </div>
+          </article>
+
+          <article class="feature accent-green" id="predictive-maintenance">
+            <div class="feature-head">
+              <div class="number">3</div>
+              <h2>Predictive Maintenance</h2>
+            </div>
+            <div class="feature-body">
+              <p class="plain">AI predicts machine failures before a breakdown happens.</p>
+              <div class="example">Example: "This motor may fail in 3 days."</div>
+              <p class="plain">This helps reduce downtime and plan maintenance earlier.</p>
+            </div>
+          </article>
+
+          <article class="feature accent-red" id="root-cause-analysis">
+            <div class="feature-head">
+              <div class="number">4</div>
+              <h2>Root Cause Analysis</h2>
+            </div>
+            <div class="feature-body">
+              <p class="plain">AI investigates why a problem happened.</p>
+              <div class="example">
+                Example: "Production dropped because Conveyor Line B overheated after last shift."
+              </div>
+              <p class="plain">This reduces manual log checking for operators and engineers.</p>
+            </div>
+          </article>
+
+          <article class="feature accent-cyan" id="production-optimization">
+            <div class="feature-head">
+              <div class="number">5</div>
+              <h2>Production Optimization</h2>
+            </div>
+            <div class="feature-body">
+              <p class="plain">AI finds inefficiencies in the factory and suggests improvements.</p>
+              <div>
+                <div class="label">Looks for</div>
+                <ul>
+                  <li>bottlenecks</li>
+                  <li>idle machines</li>
+                  <li>slow production lines</li>
+                </ul>
+              </div>
+            </div>
+          </article>
+
+          <article class="feature accent-green" id="factory-chat-assistant">
+            <div class="feature-head">
+              <div class="number">6</div>
+              <h2>AI Factory Chat Assistant</h2>
+            </div>
+            <div class="feature-body">
+              <p class="plain">Managers can ask factory questions in natural language.</p>
+              <div>
+                <div class="label">Example questions</div>
+                <ul>
+                  <li>Why did production drop today?</li>
+                  <li>Which machine is risky?</li>
+                  <li>Show top downtime causes.</li>
+                </ul>
+              </div>
+              <div class="example">AI answers instantly using operational data.</div>
+            </div>
+          </article>
+
+          <article class="feature accent-amber" id="autonomous-agents">
+            <div class="feature-head">
+              <div class="number">7</div>
+              <h2>Autonomous AI Agents</h2>
+            </div>
+            <div class="feature-body">
+              <p class="plain">Different AI agents work together automatically.</p>
+              <div>
+                <div class="label">Example teamwork</div>
+                <ul>
+                  <li>Monitoring Agent detects the issue</li>
+                  <li>RCA Agent investigates</li>
+                  <li>Maintenance Agent predicts failure</li>
+                  <li>Reporting Agent creates a report</li>
+                </ul>
+              </div>
+              <div class="example">Like an AI operations team.</div>
+            </div>
+          </article>
+
+          <article class="feature accent-cyan" id="operational-memory">
+            <div class="feature-head">
+              <div class="number">8</div>
+              <h2>Operational Memory</h2>
+            </div>
+            <div class="feature-body">
+              <p class="plain">AI remembers past incidents and previous fixes.</p>
+              <div class="example">
+                If the same issue happens again, AI already knows the probable cause and can suggest
+                the previous solution.
+              </div>
+              <p class="plain">This is very useful for factories with repeated machine patterns.</p>
+            </div>
+          </article>
+
+          <article class="feature accent-red" id="incident-timeline">
+            <div class="feature-head">
+              <div class="number">9</div>
+              <h2>Incident Timeline</h2>
+            </div>
+            <div class="feature-body">
+              <p class="plain">AI creates a clear timeline of what happened.</p>
+              <div class="timeline">
+                <div class="timeline-row"><span class="time">2:01 PM</span><span>temperature spike</span></div>
+                <div class="timeline-row"><span class="time">2:03 PM</span><span>vibration increased</span></div>
+                <div class="timeline-row"><span class="time">2:05 PM</span><span>throughput dropped</span></div>
+                <div class="timeline-row"><span class="time">2:07 PM</span><span>machine shutdown</span></div>
+              </div>
+              <div class="example">Easy for managers to understand.</div>
+            </div>
+          </article>
+
+          <article class="feature accent-green" id="executive-reports">
+            <div class="feature-head">
+              <div class="number">10</div>
+              <h2>Executive Reports</h2>
+            </div>
+            <div class="feature-body">
+              <p class="plain">AI automatically generates reports for leaders and operations teams.</p>
+              <div>
+                <div class="label">Reports</div>
+                <ul>
+                  <li>shift summaries</li>
+                  <li>maintenance reports</li>
+                  <li>downtime reports</li>
+                  <li>operational insights</li>
+                </ul>
+              </div>
+              <div class="example">This saves manual reporting work.</div>
+            </div>
+          </article>
+
+          <article class="feature accent-cyan" id="real-time-dashboard">
+            <div class="feature-head">
+              <div class="number">11</div>
+              <h2>Real-Time Dashboard</h2>
+            </div>
+            <div class="feature-body">
+              <p class="plain">A live factory dashboard shows the current operational picture.</p>
+              <div>
+                <div class="label">Shows</div>
+                <ul>
+                  <li>machine health</li>
+                  <li>alerts</li>
+                  <li>production metrics</li>
+                  <li>AI recommendations</li>
+                  <li>operational status</li>
+                </ul>
+              </div>
+              <div class="example">Like Datadog or Grafana for factories.</div>
+            </div>
+          </article>
+
+          <article class="feature accent-amber" id="multi-model-routing">
+            <div class="feature-head">
+              <div class="number">12</div>
+              <h2>Multi-Model AI Routing</h2>
+            </div>
+            <div class="feature-body">
+              <p class="plain">The system intelligently chooses the best AI model for each job.</p>
+              <div>
+                <div class="label">Example routing</div>
+                <ul>
+                  <li>cheap model for summaries</li>
+                  <li>powerful model for deep RCA</li>
+                  <li>local model for fallback</li>
+                </ul>
+              </div>
+              <div class="example">This reduces AI cost while keeping quality high.</div>
+            </div>
+          </article>
+
+          <article class="feature accent-green" id="ai-observability">
+            <div class="feature-head">
+              <div class="number">13</div>
+              <h2>AI Observability</h2>
+            </div>
+            <div class="feature-body">
+              <p class="plain">The platform tracks how the AI system is performing.</p>
+              <div>
+                <div class="label">Tracks</div>
+                <ul>
+                  <li>AI latency</li>
+                  <li>token usage</li>
+                  <li>failures</li>
+                  <li>model performance</li>
+                </ul>
+              </div>
+              <div class="example">Important for enterprise AI systems.</div>
+            </div>
+          </article>
+
+          <article class="feature accent-cyan" id="autoscaling">
+            <div class="feature-head">
+              <div class="number">14</div>
+              <h2>Autoscaling</h2>
+            </div>
+            <div class="feature-body">
+              <p class="plain">If factory data spikes, AI services scale automatically.</p>
+              <div class="example">
+                Example: more incidents means more AI workers start automatically.
+              </div>
+              <p class="plain">This helps the platform handle busy plant conditions.</p>
+            </div>
+          </article>
+
+          <article class="feature accent-red wide" id="human-approval">
+            <div class="feature-head">
+              <div class="number">15</div>
+              <h2>Human Approval Workflow</h2>
+            </div>
+            <div class="feature-body">
+              <p class="plain">AI can suggest actions, but humans approve important changes first.</p>
+              <div class="example">
+                Example: AI asks, "Rollback production configuration?" A manager clicks Approve or
+                Reject.
+              </div>
+              <p class="plain">This is safer for real factories where actions can affect production.</p>
+            </div>
+          </article>
+        </section>
+
+        <div class="footer-note">
+          This page is intentionally written in short, simple language for demos, stakeholder
+          briefings, and non-technical product walkthroughs.
+        </div>
+      </main>
+    </div>
+
+    <script>
+      const links = [...document.querySelectorAll(".toc-nav a")];
+      const sections = links
+        .map((link) => document.querySelector(link.getAttribute("href")))
+        .filter(Boolean);
+
+      const observer = new IntersectionObserver(
+        (entries) => {
+          const visible = entries
+            .filter((entry) => entry.isIntersecting)
+            .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
+
+          if (!visible) return;
+
+          links.forEach((link) => {
+            link.classList.toggle(
+              "active",
+              link.getAttribute("href") === `#${visible.target.id}`
+            );
+          });
+        },
+        {
+          rootMargin: "-18% 0px -68% 0px",
+          threshold: [0.08, 0.18, 0.32, 0.48],
+        }
+      );
+
+      sections.forEach((section) => observer.observe(section));
+    </script>
+  </body>
+</html>

@@ -107,6 +107,7 @@ helm upgrade --install forgemind ./infra/helm/factorymind \
 - [DEPLOYMENT.md](docs/DEPLOYMENT.md) — Docker → Kubernetes → TrueFoundry walkthrough
 - [API.md](docs/API.md) — REST surface for every service
 - [forgemind-ai-platform.html](docs/forgemind-ai-platform.html) - standalone HTML platform documentation with a floating table of contents
+- [forgemind-ai-features-summary.html](docs/forgemind-ai-features-summary.html) - short, simple feature summary for demos and non-technical audiences
 - [infra/truefoundry/README.md](infra/truefoundry/README.md) — TrueFoundry-specific notes
 - [AGENTS.md](AGENTS.md) — manufacturing domain context loaded by every Hermes agent
 

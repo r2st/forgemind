@@ -8,4 +8,3 @@ prometheus-client==0.20.0
 sqlalchemy[asyncio]==2.0.29
 asyncpg==0.29.0
 python-jose[cryptography]==3.3.0
--e /app/shared

@@ -6,4 +6,3 @@ pydantic-settings==2.2.1
 structlog==24.1.0
 prometheus-client==0.20.0
 nats-py==2.7.2
--e /app/shared

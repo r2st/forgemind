@@ -11,4 +11,3 @@ asyncpg==0.29.0
 numpy==1.26.4
 scikit-learn==1.4.1.post1
 python-jose[cryptography]==3.3.0
--e /app/shared

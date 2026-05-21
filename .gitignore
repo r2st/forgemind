@@ -9,6 +9,7 @@ build/
 .env
 .env.local
 .env.*.local
+.env*.bak
 *.egg-info/
 .coverage
 .pytest_cache/
