@@ -3,11 +3,18 @@ WORKDIR /app
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential gcc git && \
     rm -rf /var/lib/apt/lists/*
-COPY shared/ /app/shared/
-COPY services/api-gateway/requirements.txt /app/requirements.txt
+
+# Create non-root user
+RUN useradd -m -u 1000 appuser && \
+    chown -R appuser:appuser /app
+
+COPY --chown=appuser:appuser shared/ /app/shared/
+COPY --chown=appuser:appuser services/api-gateway/requirements.txt /app/requirements.txt
 RUN pip install --no-cache-dir -e /app/shared && \
     pip install --no-cache-dir -r /app/requirements.txt
-COPY services/api-gateway/app /app/app
+COPY --chown=appuser:appuser services/api-gateway/app /app/app
+
+USER appuser
 ENV PYTHONUNBUFFERED=1 SERVICE_NAME=api-gateway
 EXPOSE 8000
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]

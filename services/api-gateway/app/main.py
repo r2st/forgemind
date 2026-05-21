@@ -34,7 +34,7 @@ from forgemind_common import (
     update_agent_config,
     update_default_config,
 )
-from forgemind_common.auth import create_access_token, require_user
+from forgemind_common.auth import create_access_token, require_user, require_admin
 from forgemind_common.observability import install_metrics
 
 setup_logging("api-gateway")
@@ -42,11 +42,16 @@ log = get_logger(__name__)
 settings = get_settings()
 
 app = FastAPI(title="ForgeMind API Gateway", version="0.1.0")
+
+# CORS: In production, restrict to specific origins
+import os
+allowed_origins = os.getenv("CORS_ALLOWED_ORIGINS", "http://localhost:5173,http://localhost:3000").split(",")
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_origins=allowed_origins,
+    allow_credentials=True,
+    allow_methods=["GET", "POST", "PUT", "DELETE", "PATCH"],
+    allow_headers=["Content-Type", "Authorization", "X-Agent"],
 )
 install_metrics(app, "api-gateway")
 
@@ -84,16 +89,27 @@ class LoginRequest(BaseModel):
 
 @app.post("/api/v1/auth/login")
 async def login(req: LoginRequest) -> dict:
-    # Demo: trivial credentials. Real deployment plugs in OIDC.
-    role = "viewer"
-    if req.username == "admin" and req.password == "admin":
-        role = "admin"
-    elif req.username == "engineer" and req.password == "engineer":
-        role = "engineer"
-    elif req.username == "operator" and req.password == "operator":
-        role = "operator"
-    elif req.password != "viewer":
+    # Demo: credential check via environment variables for security.
+    # Production deployment should use proper OIDC/OAuth2.
+    import os
+    import secrets
+    
+    # Check against environment-configured credentials
+    valid_users = {
+        os.getenv("AUTH_ADMIN_USER", "admin"): (os.getenv("AUTH_ADMIN_PASS"), "admin"),
+        os.getenv("AUTH_ENGINEER_USER", "engineer"): (os.getenv("AUTH_ENGINEER_PASS"), "engineer"),
+        os.getenv("AUTH_OPERATOR_USER", "operator"): (os.getenv("AUTH_OPERATOR_PASS"), "operator"),
+        os.getenv("AUTH_VIEWER_USER", "viewer"): (os.getenv("AUTH_VIEWER_PASS"), "viewer"),
+    }
+    
+    user_data = valid_users.get(req.username)
+    if not user_data or not user_data[0]:
         raise HTTPException(401, "invalid credentials")
+    
+    expected_password, role = user_data
+    if not secrets.compare_digest(req.password, expected_password):
+        raise HTTPException(401, "invalid credentials")
+    
     token = create_access_token(req.username, role=role)  # type: ignore[arg-type]
     return {"access_token": token, "role": role, "username": req.username}
 
@@ -119,6 +135,7 @@ class LLMConfigUpdate(BaseModel):
 
 _SERVICE_HEALTH: dict[str, str | None] = {
     "api-gateway": None,
+    "llm-gateway": "http://llm-gateway:8000",
     "telemetry-simulator": "http://telemetry-simulator:8000",
     "telemetry-ingestion": "http://telemetry-ingestion:8000",
     "anomaly-detection": settings.anomaly_service_url,
@@ -133,7 +150,7 @@ _SERVICE_HEALTH: dict[str, str | None] = {
 
 
 @app.get("/api/v1/admin/health")
-async def admin_health() -> dict[str, Any]:
+async def admin_health(user=Depends(require_admin)) -> dict[str, Any]:
     services = await _check_services()
     ok = sum(1 for s in services if s["status"] == "ok")
     return {
@@ -147,7 +164,7 @@ async def admin_health() -> dict[str, Any]:
 
 
 @app.get("/api/v1/admin/agents")
-async def admin_agents() -> dict[str, Any]:
+async def admin_agents(user=Depends(require_user)) -> dict[str, Any]:
     services = await _check_services()
     service_by_name = {s["name"]: s for s in services}
     agents: list[dict[str, Any]] = []
@@ -167,20 +184,37 @@ async def admin_agents() -> dict[str, Any]:
 
 
 @app.put("/api/v1/admin/llm/default")
-async def update_default_llm_config(req: LLMConfigUpdate) -> dict[str, Any]:
+async def update_default_llm_config(req: LLMConfigUpdate, user=Depends(require_user)) -> dict[str, Any]:
     patch = req.model_dump(exclude_unset=True)
     update_default_config(patch)
     return config_for_admin()
 
 
 @app.put("/api/v1/admin/agents/{agent_name}/config")
-async def update_agent_llm_config(agent_name: str, req: LLMConfigUpdate) -> dict[str, Any]:
+async def update_agent_llm_config(agent_name: str, req: LLMConfigUpdate, user=Depends(require_user)) -> dict[str, Any]:
     known = {a["name"] for a in KNOWN_AGENTS}
     if agent_name not in known:
         raise HTTPException(404, f"unknown agent {agent_name}")
     patch = req.model_dump(exclude_unset=True)
     update_agent_config(agent_name, patch)
     return config_for_admin(agent_name)
+
+
+# ----------------------------------------------------------------------
+# LLM Gateway Admin Endpoints (proxy to llm-gateway service)
+# ----------------------------------------------------------------------
+
+LLM_GATEWAY_URL = "http://llm-gateway:8000"
+
+
+@app.api_route(
+    "/api/v1/admin/llm/{path:path}",
+    methods=["GET", "POST", "PUT", "DELETE", "PATCH"],
+)
+async def llm_admin_proxy(path: str, request: Request, user=Depends(require_user)) -> Any:
+    """Proxy all /api/v1/admin/llm/* requests to the llm-gateway service."""
+    url = f"{LLM_GATEWAY_URL}/api/v1/admin/llm/{path}"
+    return await _forward(request, url)
 
 
 async def _check_services() -> list[dict[str, Any]]:
@@ -270,7 +304,8 @@ async def _forward(request: Request, url: str) -> Any:
                 headers=headers,
             )
         except httpx.HTTPError as exc:
-            raise HTTPException(502, f"upstream error: {exc}") from exc
+            log.error("upstream request failed", exc_info=True)
+            raise HTTPException(502, "upstream service unavailable") from exc
     ct = resp.headers.get("content-type", "")
     if "text/event-stream" in ct:
         async def stream():

@@ -59,3 +59,32 @@ export const Admin = {
   updateAgent: (agentName, payload) =>
     api.put(`/admin/agents/${agentName}/config`, payload).then((r) => r.data),
 }
+export const LLMGateway = {
+  // Providers
+  providers: () => api.get('/admin/llm/providers').then((r) => r.data),
+  createProvider: (payload) => api.post('/admin/llm/providers', payload).then((r) => r.data),
+  updateProvider: (id, payload) => api.put(`/admin/llm/providers/${id}`, payload).then((r) => r.data),
+  deleteProvider: (id) => api.delete(`/admin/llm/providers/${id}`).then((r) => r.data),
+  
+  // Models
+  models: () => api.get('/admin/llm/models').then((r) => r.data),
+  createModel: (payload) => api.post('/admin/llm/models', payload).then((r) => r.data),
+  updateModel: (id, payload) => api.put(`/admin/llm/models/${id}`, payload).then((r) => r.data),
+  deleteModel: (id) => api.delete(`/admin/llm/models/${id}`).then((r) => r.data),
+  
+  // Agent routing
+  agentRouting: (agentName) => api.get(`/admin/llm/agents/${agentName}/routing`).then((r) => r.data),
+  updateAgentRouting: (agentName, payload) => api.put(`/admin/llm/agents/${agentName}/routing`, payload).then((r) => r.data),
+  
+  // Agent fallback
+  agentFallback: (agentName) => api.get(`/admin/llm/agents/${agentName}/fallback`).then((r) => r.data),
+  updateAgentFallback: (agentName, payload) => api.put(`/admin/llm/agents/${agentName}/fallback`, payload).then((r) => r.data),
+  
+  // Analytics
+  usage: (params) => api.get('/admin/llm/usage', { params }).then((r) => r.data),
+  cost: (params) => api.get('/admin/llm/cost', { params }).then((r) => r.data),
+  audit: (params) => api.get('/admin/llm/audit', { params }).then((r) => r.data),
+  
+  // Health
+  health: () => api.get('/admin/llm/health').then((r) => r.data),
+}

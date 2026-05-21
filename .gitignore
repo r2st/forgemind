@@ -19,3 +19,16 @@ build/
 .DS_Store
 *.log
 frontend/dist/
+
+# Coverage artifacts (any location)
+.coverage.*
+htmlcov/
+
+# Editor temp files
+*.timestamp-*.mjs
+
+# Dockerfile backups
+**/Dockerfile.bak
+
+# Misc tool scratch
+.openhands-*.md

@@ -1,14 +1,20 @@
 FROM python:3.11-slim
 WORKDIR /app
+
+# Create non-root user
+RUN useradd -m -u 1000 appuser && \
+    chown -R appuser:appuser /app
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential gcc git ripgrep ffmpeg && \
     rm -rf /var/lib/apt/lists/*
-COPY shared/ /app/shared/
-COPY AGENTS.md /app/AGENTS.md
-COPY services/workflow-engine/requirements.txt /app/requirements.txt
+COPY --chown=appuser:appuser shared/ /app/shared/
+COPY --chown=appuser:appuser AGENTS.md /app/AGENTS.md
+COPY --chown=appuser:appuser services/workflow-engine/requirements.txt /app/requirements.txt
 RUN pip install --no-cache-dir -e /app/shared && \
     pip install --no-cache-dir -r /app/requirements.txt
-COPY services/workflow-engine/app /app/app
+COPY --chown=appuser:appuser services/workflow-engine/app /app/app
+USER appuser
+
 ENV PYTHONUNBUFFERED=1 \
     SERVICE_NAME=workflow-engine \
     HERMES_CONFIG_DIR=/app/.hermes

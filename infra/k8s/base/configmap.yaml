@@ -6,7 +6,7 @@ metadata:
 data:
   ENVIRONMENT: "prod"
   LOG_LEVEL: "INFO"
-  POSTGRES_DSN: "postgresql+asyncpg://forgemind:forgemind@postgres.forgemind:5432/forgemind"
+  # POSTGRES_DSN moved to forgemind-secrets for security
   REDIS_URL: "redis://redis.forgemind:6379/0"
   NATS_URL: "nats://nats.forgemind:4222"
   TELEMETRY_SUBJECT: "forgemind.telemetry"

@@ -10,7 +10,7 @@ from __future__ import annotations
 from functools import lru_cache
 from typing import Literal
 
-from pydantic import Field
+from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -38,8 +38,9 @@ class Settings(BaseSettings):
     # ------------------------------------------------------------------
     # Persistence
     # ------------------------------------------------------------------
-    postgres_dsn: str = (
-        "postgresql+asyncpg://forgemind:forgemind@postgres:5432/forgemind"
+    postgres_dsn: str = Field(
+        default="postgresql+asyncpg://postgres:postgres@postgres:5432/forgemind",
+        description="PostgreSQL connection string. Override with POSTGRES_DSN env var in production."
     )
     redis_url: str = "redis://redis:6379/0"
 
@@ -80,7 +81,10 @@ class Settings(BaseSettings):
     # ------------------------------------------------------------------
     # Auth
     # ------------------------------------------------------------------
-    jwt_secret: str = "change-me-in-prod"
+    jwt_secret: str = Field(
+        default="",
+        description="JWT signing secret. MUST be set via JWT_SECRET env var."
+    )
     jwt_algorithm: str = "HS256"
     jwt_expiry_minutes: int = 60
 
@@ -101,6 +105,21 @@ class Settings(BaseSettings):
     orchestrator_url: str = "http://ai-orchestrator:8000"
     notification_service_url: str = "http://notification-service:8000"
     workflow_engine_url: str = "http://workflow-engine:8000"
+
+    @field_validator("jwt_secret")
+    @classmethod
+    def validate_jwt_secret(cls, v: str, info) -> str:
+        """Ensure JWT secret is set in production."""
+        environment = info.data.get("environment", "dev")
+        if environment == "prod" and not v:
+            raise ValueError("JWT_SECRET must be set in production environment")
+        if environment != "prod" and not v:
+            import secrets
+            # Generate a random secret for dev/staging if not provided
+            return secrets.token_urlsafe(32)
+        if len(v) < 16:
+            raise ValueError("JWT_SECRET must be at least 16 characters")
+        return v
 
 
 @lru_cache(maxsize=1)

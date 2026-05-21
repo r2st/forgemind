@@ -68,7 +68,7 @@ def build_rca_agent() -> HermesAgentRuntime:
     )
 
 
-_JSON_BLOCK = re.compile(r"\{.*\}", re.DOTALL)
+_JSON_BLOCK = re.compile(r"\{.*?\}", re.DOTALL)  # Non-greedy to prevent ReDoS
 
 
 def parse_rca_json(text: str) -> dict[str, Any]:

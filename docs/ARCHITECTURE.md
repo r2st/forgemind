@@ -20,15 +20,20 @@ ForgeMind is built on three layers with sharply distinct responsibilities. Getti
                                   │
                                   ▼
 ┌──────────────────────────────────────────────────────────────────────┐
-│                    OpenAI-Compatible LLM API                         │
-│   Configured base URL · API key · model tiers · optional gateway     │
-│   Direct provider, private proxy, or self-hosted compatible API      │
+│               Generic OpenAI-Compatible LLM Gateway                  │
+│   Provider-agnostic: OpenAI, Anthropic, Azure, Bedrock, Vertex,     │
+│   Together, Groq, Fireworks, DeepInfra, OpenRouter, vLLM, llama.cpp,│
+│   Ollama, TGI, SGLang, or any fine-tuned model on a compatible API  │
+│   Configured per-agent: base_url · model · api_key · enabled        │
 └──────────────────────────────────────────────────────────────────────┘
 ```
 
 Hermes routes every LLM call through the configured OpenAI-compatible API
-(`base_url` + `api_key`). LangGraph calls Hermes agents as nodes. The Admin
-Panel can override base URL, model, API key, and enabled state per agent.
+(`base_url` + `api_key` + `model`). LangGraph calls Hermes agents as nodes. The
+Admin Panel can override base URL, model, API key, and enabled state **per agent**
+or set global defaults. This lets each agent use a different provider or model:
+e.g., RCA Agent on a fine-tuned industrial model, ChatOps on OpenAI GPT-4o,
+Monitoring on a fast local Ollama instance.
 
 ## Service map
 
@@ -64,9 +69,12 @@ Panel can override base URL, model, API key, and enabled state per agent.
                               │                 │                     │
                               ▼                 ▼                     ▼
                        ┌──────────────────────────────────────────────────────┐
-                       │  Configured OpenAI-Compatible API                    │
-                       │  (direct provider, private gateway, or self-hosted   │
-                       │   compatible endpoint)                               │
+                       │  Generic OpenAI-Compatible LLM Gateway               │
+                       │  Provider-agnostic: OpenAI, Anthropic, Azure,        │
+                       │  Bedrock, Vertex, Together, Groq, Fireworks,         │
+                       │  DeepInfra, OpenRouter, vLLM, llama.cpp, Ollama,     │
+                       │  TGI, SGLang, fine-tuned models, or any compatible   │
+                       │  endpoint. Per-agent base_url/model/api_key config.  │
                        └──────────────────────────────────────────────────────┘
 ```
 
@@ -97,17 +105,112 @@ Each node mutates a shared `WorkflowState`. The `assess_severity` node combines 
 
 The RCA Agent is the only one that writes durable agent memory (vector summaries of past incidents). All other operational state lives in the relational store; pgvector is reserved for semantic recall.
 
-## LLM API Model Tiers
+## LLM Gateway Architecture
 
-Hermes asks for a *tier*; the runtime maps that tier to a concrete model. The
-Admin Panel can override the model globally or per agent.
+The LLM layer is a **centralized Generic Enterprise LLM Gateway** service (`llm-gateway`) that
+provides a unified control plane for all AI inference. All Hermes agents call the gateway's
+OpenAI-compatible `/v1/chat/completions` endpoint; the gateway handles routing, translation,
+fallback, observability, and cost tracking.
 
-| Tier | Default model | Used by |
-| ---- | ------------- | ------- |
-| `fast` | `gpt-4o-mini` | severity classifier, remediation agent, monitoring agent |
-| `powerful` | `gpt-4o` | RCA, PdM, supervisor, reporting, chatops |
-| `fallback` | `gpt-4o-mini` | last-resort backstop |
-| `embedding` | `text-embedding-3-small` | pgvector ingest/search |
+### Architecture flow
+
+```
+Hermes Agents (RCA, PdM, ChatOps, etc.)
+    │ LLMClient("agent-name")
+    │ POST /v1/chat/completions
+    │ X-Agent: agent-name
+    ▼
+┌─────────────────────────────────────────────────────────────┐
+│ LLM Gateway (llm-gateway:8000)                              │
+│ ┌─────────────┐   ┌──────────────┐   ┌─────────────────┐   │
+│ │ Provider    │   │ Model        │   │ Agent → Model   │   │
+│ │ Registry    │ → │ Registry     │ → │ Mapping         │   │
+│ └─────────────┘   └──────────────┘   └─────────────────┘   │
+│         │                                     │             │
+│         ▼                                     ▼             │
+│ ┌──────────────────────────────────────────────────────┐   │
+│ │ Routing Engine (cheapest / lowest_latency /          │   │
+│ │                 highest_quality / local_only ...)    │   │
+│ └──────────────────────────────────────────────────────┘   │
+│         │                                                   │
+│         ▼                                                   │
+│ ┌──────────────────────────────────────────────────────┐   │
+│ │ Translation Layer                                     │   │
+│ │ • OpenAI → pass through                              │   │
+│ │ • Anthropic → convert to Messages API                │   │
+│ │ • Gemini → convert to Gemini format                  │   │
+│ │ • Bedrock → AWS SDK call                             │   │
+│ │ • vLLM/Ollama/TGI/OpenRouter → pass through          │   │
+│ └──────────────────────────────────────────────────────┘   │
+│         │                                                   │
+│         ▼                                                   │
+│ ┌──────────────────────────────────────────────────────┐   │
+│ │ Fallback Chain Executor                               │   │
+│ │ primary → fallback[0] → fallback[1] → ... → error    │   │
+│ └──────────────────────────────────────────────────────┘   │
+│         │                                                   │
+│         ▼                                                   │
+│ ┌──────────────────────────────────────────────────────┐   │
+│ │ Observability & Governance                            │   │
+│ │ • Prometheus metrics (tokens, cost, latency, errors)  │   │
+│ │ • Audit log (every inference call)                    │   │
+│ │ • Per-agent quotas & rate limits                      │   │
+│ │ • Encrypted credential storage (Fernet)               │   │
+│ └──────────────────────────────────────────────────────┘   │
+└─────────────────────────────────────────────────────────────┘
+    │
+    ▼
+Cloud/Self-Hosted Providers (OpenAI, Anthropic, Gemini,
+Azure, Bedrock, Groq, Together, OpenRouter, Ollama, vLLM, ...)
+```
+
+### Key features
+
+**Provider Registry**: Register multiple LLM providers (cloud or self-hosted) with encrypted credentials.
+
+**Model Registry**: Define models per provider with cost/token limits, context windows, and capabilities.
+
+**Per-Agent Routing**: Each agent (Monitoring, RCA, PdM, ChatOps, etc.) has its own primary model and fallback chain.
+
+**Routing Strategies**: `cheapest`, `lowest_latency`, `highest_quality`, `local_only`, `gpu_aware`, `compliance_aware`.
+
+**Automatic Fallback**: On error/timeout/rate-limit, walk the fallback chain. Every fallback event is logged.
+
+**Cost Tracking**: Real-time per-agent, per-model, per-provider cost accumulation.
+
+**Admin Panel**: CRUD for providers, models, agent routing, fallback config, usage analytics, health dashboard.
+
+### Supported providers
+
+| Provider | Type | Translation |
+| -------- | ---- | ----------- |
+| OpenAI | Cloud | Pass-through |
+| Anthropic | Cloud | Messages API |
+| Google Gemini | Cloud | Gemini API |
+| Azure OpenAI | Cloud | Pass-through |
+| AWS Bedrock | Cloud | Bedrock SDK |
+| OpenRouter | Cloud | Pass-through |
+| Groq | Cloud | Pass-through |
+| Together AI | Cloud | Pass-through |
+| Ollama | Self-Hosted | Pass-through |
+| vLLM | Self-Hosted | Pass-through |
+| TGI (Text Generation Inference) | Self-Hosted | Pass-through |
+| llama.cpp | Self-Hosted | Pass-through |
+| Custom OpenAI-Compatible | Any | Pass-through |
+
+### Configuration hierarchy
+
+1. **Provider registry** (Admin Panel) — define cloud/self-hosted providers with credentials
+2. **Model registry** (Admin Panel) — define models per provider with cost/limits
+3. **Agent routing** (Admin Panel) — assign primary + fallback models per agent
+4. **Routing policy** (Admin Panel) — global or per-agent routing strategy
+
+This lets you:
+- Route RCA and PdM to a fine-tuned industrial model (e.g., served by vLLM)
+- Route Monitoring to a fast local Ollama instance
+- Keep ChatOps on OpenAI GPT-4o for long context
+- Use Azure OpenAI for compliance-sensitive workloads
+- Automatically fail over to a cloud provider if local models are down
 
 ## Data model
 

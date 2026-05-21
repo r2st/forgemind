@@ -22,26 +22,26 @@ from pydantic import BaseModel, Field
 class TelemetryReading(BaseModel):
     """A single sensor reading from a factory machine."""
 
-    machine_id: str
-    line_id: str = "line-A"
-    plant_id: str = "plant-01"
+    machine_id: str = Field(..., min_length=1, max_length=100)
+    line_id: str = Field(default="line-A", min_length=1, max_length=100)
+    plant_id: str = Field(default="plant-01", min_length=1, max_length=100)
     timestamp: datetime = Field(default_factory=datetime.utcnow)
 
-    # Physical sensors
-    temperature_c: float
-    vibration_mm_s: float
-    pressure_bar: float
-    rpm: float
-    power_kw: float
+    # Physical sensors - validate reasonable ranges to prevent data injection attacks
+    temperature_c: float = Field(..., ge=-50, le=500)  # -50°C to 500°C
+    vibration_mm_s: float = Field(..., ge=0, le=100)  # 0 to 100 mm/s
+    pressure_bar: float = Field(..., ge=0, le=1000)  # 0 to 1000 bar
+    rpm: float = Field(..., ge=0, le=50000)  # 0 to 50000 RPM
+    power_kw: float = Field(..., ge=0, le=10000)  # 0 to 10000 kW
 
     # Operational state
     state: Literal["RUNNING", "IDLE", "DOWN", "MAINTENANCE"] = "RUNNING"
-    units_produced: int = 0
-    defects: int = 0
+    units_produced: int = Field(default=0, ge=0, le=1000000)
+    defects: int = Field(default=0, ge=0, le=1000000)
 
     # Optional metadata
-    operator: str | None = None
-    notes: str | None = None
+    operator: str | None = Field(default=None, max_length=100)
+    notes: str | None = Field(default=None, max_length=1000)
 
 
 # ----------------------------------------------------------------------

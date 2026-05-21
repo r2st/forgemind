@@ -8,7 +8,7 @@ ForgeMind AI is an enterprise AI-powered autonomous manufacturing operations cop
 
 - Hermes Agent
 - LangGraph
-- an OpenAI-compatible LLM API gateway
+- a Generic Enterprise LLM Gateway
 
 ====================================================
 PRIMARY OBJECTIVE
@@ -125,54 +125,342 @@ Example LangGraph workflows:
 - incident escalation graph
 
 ====================================================
-LLM API GATEWAY RESPONSIBILITIES
+GENERIC LLM GATEWAY RESPONSIBILITIES
 ====================================================
 
-The configured LLM API gateway acts as the enterprise AI infrastructure boundary.
+The Generic LLM Gateway is the centralized AI control plane that sits between
+all Hermes agents and every LLM provider (cloud or self-hosted).
 
-The system MUST support a configurable OpenAI-compatible API for:
+ALL agent inference MUST route through the gateway. NO agent may call an LLM
+provider directly.
 
-1. AI Gateway
-Implement:
-- multi-model routing
-- provider abstraction
-- fallback handling
-- cost-aware routing
+====================================================
+SUPPORTED LLM PROVIDERS (Cloud + Self-Hosted)
+====================================================
 
-Example routing:
-- cheap model → summarization
-- large model → RCA reasoning
-- local model → fallback inference
+Cloud Providers:
+- OpenAI (including Azure OpenAI)
+- Anthropic Claude
+- Google Gemini / Vertex AI
+- AWS Bedrock
+- OpenRouter
+- Groq
+- Together AI
+- Fireworks AI
+- DeepInfra
+- Replicate
+- Any OpenAI-compatible endpoint
 
-2. Model Serving
-Deploy:
-- AI agents
-- inference services
-- anomaly detection APIs
-- predictive services
-- operational intelligence services
+Self-Hosted / On-Premise:
+- Ollama
+- vLLM
+- llama.cpp server
+- Text Generation Inference (TGI)
+- SGLang
+- LocalAI
+- Any custom OpenAI-compatible inference server
 
-3. Autoscaling
-Enable autoscaling for:
-- inference services
-- agent services
-- RCA pipelines
+The gateway must support arbitrary provider addition without code changes.
 
-4. Observability
-Track:
-- token usage
-- inference latency
-- request tracing
-- retries
-- failure analytics
-- model health
+====================================================
+ADMIN-CONFIGURABLE LLM MANAGEMENT
+====================================================
 
-5. Enterprise Governance
-Implement:
-- API management
-- rate limiting
-- quotas
-- audit logging
+The Admin Panel provides CRUD for:
+
+1. Provider Registry
+- Add/edit/delete cloud or self-hosted providers
+- Fields: name, kind (cloud|self_hosted), base_url, api_key, auth_header,
+  enabled, metadata
+- Encrypted credential storage at rest
+- Health probes to validate provider connectivity
+
+2. Model Registry
+- Add/edit/delete models from registered providers
+- Fields: provider_id, model_name, display_name, context_window, max_output,
+  cost_per_input_token, cost_per_output_token,
+  capabilities[reasoning,vision,tools], enabled
+- Support for arbitrary model additions
+
+3. Agent-to-Model Mapping
+- Each agent (Monitoring, RCA, PdM, Reporting, ChatOps, Production Optimization,
+  Supervisor) has:
+  * primary_model_id
+  * fallback_model_ids[] (ordered fallback chain)
+  * temperature, max_tokens, reasoning_mode
+  * timeout_s, retry_policy
+
+4. Routing Policies
+- Global or per-agent routing strategies:
+  * cheapest — minimize cost
+  * lowest_latency — minimize response time
+  * highest_quality — maximize capability
+  * local_only — use only self-hosted models
+  * gpu_aware — prefer GPU-backed models
+  * compliance_aware — respect data residency / security requirements
+- Strategy can be set globally or overridden per agent
+
+5. Fallback Configuration
+- Define fallback chains for each agent
+- On provider error / timeout / rate-limit, walk the fallback list
+- Record every fallback event with reason + timestamp
+
+====================================================
+PER-AGENT LLM CONFIGURATION
+====================================================
+
+The gateway resolves agent → model mapping from:
+1. Agent-specific config (highest priority)
+2. Default config
+3. System defaults (lowest priority)
+
+Example agent config:
+{
+  "agent_name": "rca-agent",
+  "primary_model": "claude-3-5-sonnet-20241022",
+  "fallback_models": ["gpt-4o", "llama-3.1-70b-ollama"],
+  "temperature": 0.1,
+  "max_tokens": 4096,
+  "reasoning_mode": true,
+  "timeout_s": 90,
+  "retry_policy": "exponential_backoff"
+}
+
+Agents send requests with an `X-Agent: <agent_name>` header. The gateway
+resolves the config and routes to the correct provider + model.
+
+====================================================
+LLM ROUTING ENGINE
+====================================================
+
+The routing engine:
+1. Receives OpenAI-compatible `/v1/chat/completions` requests
+2. Reads `X-Agent` header to identify calling agent
+3. Resolves agent → model mapping from config
+4. Selects provider based on routing strategy
+5. Translates request to provider-native format if needed
+6. Executes request with retries + fallback
+7. Normalizes response to OpenAI-compatible format
+8. Records usage metrics (tokens, cost, latency, provider)
+
+Translation layer:
+- OpenAI-compatible providers: pass-through (OpenRouter, Groq, Together, vLLM,
+  TGI, llama.cpp, Ollama, etc.)
+- Anthropic: translate OpenAI Chat Completions → Anthropic Messages API
+- Gemini: translate OpenAI Chat Completions → Gemini GenerateContent API
+- Bedrock: translate OpenAI Chat Completions → Bedrock InvokeModel API
+
+====================================================
+SELF-HOSTED MODEL SUPPORT
+====================================================
+
+The gateway supports local / on-premise inference:
+
+1. Ollama Discovery
+- Auto-discover running Ollama instances on the network
+- Query `/api/tags` to list available models
+- One-click register to model registry
+
+2. vLLM / TGI / llama.cpp Server
+- Manual registration via Admin Panel
+- Test connectivity with `/v1/models` probe
+- Support for custom authentication headers
+
+3. GPU-Aware Routing
+- Tag models with GPU requirements
+- Route to GPU-backed instances when strategy=gpu_aware
+
+4. Fallback to Cloud
+- Configure cloud provider as fallback for local models
+- On local model failure, automatically failover to cloud
+
+====================================================
+LLM OBSERVABILITY
+====================================================
+
+The gateway emits Prometheus metrics:
+- `llm_tokens_total{agent, model, provider, direction}` — counter
+- `llm_latency_seconds{agent, model, provider}` — histogram
+- `llm_failures_total{agent, model, provider, reason}` — counter
+- `llm_fallback_total{agent, from_model, to_model, reason}` — counter
+- `llm_cost_usd_total{agent, model, provider}` — counter
+
+Structured logs (JSON via structlog):
+- Every inference call: agent, model, provider, tokens, latency, cost, cached
+- Every fallback event: reason, from_model, to_model, timestamp
+- Every provider error: status_code, error_message, provider
+
+Trace propagation:
+- Accept `traceparent` header (OpenTelemetry)
+- Inject into provider requests
+- Return `x-llm-trace-id` header
+
+====================================================
+LLM GOVERNANCE
+====================================================
+
+1. RBAC
+- Admin endpoints require JWT with `admin` role
+- Read-only endpoints require `user` or `admin` role
+- Inference endpoints require valid JWT (any authenticated user)
+
+2. Quotas & Rate Limiting
+- Per-agent quotas: max requests/min, max tokens/day
+- Per-user quotas: max requests/min, max tokens/day
+- Return 429 when exceeded with Retry-After header
+
+3. Audit Log
+- Record every inference call:
+  * timestamp, agent, user_id, model, provider, tokens, cost, latency,
+    request_hash, response_hash
+  * Truncated payload (first 500 chars)
+- Queryable via Admin Panel with filters (date range, agent, model, user)
+
+4. Encrypted Credential Storage
+- All provider API keys stored encrypted at rest (Fernet)
+- Encryption key from env var `GATEWAY_SECRET_KEY`
+- Keys never logged or returned in API responses (masked display only)
+
+====================================================
+LLM GATEWAY API
+====================================================
+
+Inference Endpoints (OpenAI-compatible):
+- POST /v1/chat/completions
+  Headers: Authorization: Bearer <jwt>, X-Agent: <agent_name>
+  Body: OpenAI Chat Completions format
+  Response: OpenAI Chat Completions format + usage + custom headers
+
+- GET /v1/models
+  Lists all enabled models across all providers
+
+Admin Endpoints (all require admin JWT):
+- GET/POST/PUT/DELETE /api/v1/admin/llm/providers
+- GET/POST/PUT/DELETE /api/v1/admin/llm/models
+- GET/PUT /api/v1/admin/llm/agents/{agent_name}/routing
+- GET/PUT /api/v1/admin/llm/agents/{agent_name}/fallback
+- GET /api/v1/admin/llm/usage (per-agent, per-model, per-provider analytics)
+- GET /api/v1/admin/llm/health (provider health checks)
+- GET /api/v1/admin/llm/cost (cost monitoring + forecasting)
+- GET /api/v1/admin/llm/audit (audit log with filters)
+
+All admin endpoints are proxied through the main api-gateway service.
+
+====================================================
+LLM ARCHITECTURE
+====================================================
+
+Request flow:
+
+Hermes Agent
+    ↓ (POST /v1/chat/completions, X-Agent: rca-agent)
+LLM Gateway
+    ↓ (resolve agent → model mapping)
+Routing Engine
+    ↓ (select provider based on strategy)
+Translation Layer
+    ↓ (translate to provider-native format if needed)
+Provider (OpenAI | Anthropic | Gemini | Ollama | vLLM | etc.)
+    ↓ (return native response)
+Translation Layer
+    ↓ (normalize to OpenAI format)
+LLM Gateway
+    ↓ (record metrics, log, audit)
+Hermes Agent
+
+====================================================
+ADMIN PANEL REQUIREMENTS
+====================================================
+
+The Admin Panel MUST provide UI for:
+
+1. LLM Providers Page (CRUD)
+- List all providers with status (enabled/disabled, last_health_check)
+- Add new provider: form with name, kind, base_url, api_key, auth_header
+- Edit existing provider
+- Delete provider (with confirmation if models exist)
+- Test connectivity button (runs health probe)
+
+2. Model Registry Page (CRUD)
+- List all models with provider, cost, context_window, capabilities
+- Add new model: form with provider, model_name, display_name, costs, limits
+- Edit existing model
+- Delete model (with confirmation if assigned to agents)
+- Filter by provider, enabled, capabilities
+
+3. Agent Model Mapping Page
+- Table: one row per agent
+- Columns: Agent Name, Primary Model, Fallback Models, Temperature, Max Tokens,
+  Routing Strategy
+- Edit button → form to change primary + fallback models
+- Drag-to-reorder fallback chain
+
+4. Fallback Configuration Page
+- Visual fallback flow diagram per agent
+- Drag-and-drop to reorder fallback chain
+- Add/remove models from chain
+
+5. Routing Policies Page
+- Global routing strategy dropdown: cheapest | lowest_latency | highest_quality
+  | local_only | gpu_aware | compliance_aware
+- Per-agent override section: table with agent → strategy override
+
+6. AI Usage Analytics Page
+- Charts:
+  * Tokens over time (line chart, group by agent/model/provider)
+  * Cost over time (line chart, group by agent/model/provider)
+  * Request volume (bar chart, group by agent/model/provider)
+  * Latency distribution (histogram, group by model/provider)
+- Date range picker
+- Export CSV button
+
+7. Provider Health Dashboard
+- Table: provider name, status (healthy | degraded | down), last_check,
+  avg_latency, error_rate
+- Auto-refresh every 30s
+- Manual refresh button
+
+8. Cost Monitoring Page
+- Current month spend by provider
+- Current month spend by agent
+- Current month spend by model
+- Projected month-end cost (linear extrapolation)
+- Cost alerts: set budget limits per agent/provider
+
+9. API Key Management Page
+- List all providers with masked API keys (sk-...abcd)
+- Update key: write-only input (never shows existing key)
+- Clear key button
+- Test key button (runs health probe)
+
+10. Local Model Management Page
+- Discover Ollama: button to scan for Ollama instances on network
+- List discovered models with checkbox to register
+- Manual add: form for vLLM / TGI / llama.cpp server (base_url, model_name)
+- Test connectivity for each
+
+All pages use the existing frontend stack (Vue.js + TailwindCSS) and match
+the design language of the current Admin Panel.
+
+====================================================
+IMPORTANT
+====================================================
+
+The LLM Gateway is the ONLY path from agents to LLM providers.
+
+Every agent inference call must:
+1. Send requests to the gateway, never directly to providers
+2. Include `X-Agent: <agent_name>` header
+3. Use OpenAI-compatible request format
+4. Accept OpenAI-compatible response format
+
+The gateway provides:
+- Centralized provider management (no hardcoded keys in agent code)
+- Dynamic model swapping (no container rebuilds)
+- Cost visibility & control
+- Fallback resilience
+- Observability & audit trail
+- Support for any provider (cloud or self-hosted)
 
 ====================================================
 HIGH LEVEL PRODUCT

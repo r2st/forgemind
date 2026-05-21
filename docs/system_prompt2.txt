@@ -1,0 +1,311 @@
+Here is the updated section you should replace inside your system prompt to support:
+
+* fully generic LLM gateway
+* admin-configurable providers
+* per-agent model assignment
+* fallback chains
+* cloud + self-hosted LLMs
+* OpenAI-compatible APIs
+* runtime model switching
+* enterprise governance
+
+This architecture is MUCH stronger and more enterprise-grade. 
+
+---
+
+# REPLACE THIS SECTION
+
+## OLD SECTION
+
+```text
+3. OpenAI-compatible LLM API gateway
+```
+
+AND replace the entire:
+
+```text
+LLM API GATEWAY RESPONSIBILITIES
+```
+
+section with the following:
+
+---
+
+```text id="k3l7qm"
+====================================================
+GENERIC LLM GATEWAY RESPONSIBILITIES
+====================================================
+
+The platform MUST implement a fully generic enterprise-grade LLM Gateway layer.
+
+The LLM Gateway acts as the centralized AI control plane for all agents and AI services.
+
+The gateway MUST support:
+
+- cloud-hosted LLMs
+- self-hosted LLMs
+- OpenAI-compatible APIs
+- runtime provider switching
+- per-agent model assignment
+- fallback chains
+- dynamic routing
+- enterprise governance
+- observability
+- cost optimization
+
+====================================================
+SUPPORTED LLM PROVIDERS
+====================================================
+
+The system MUST support configurable providers including:
+
+Cloud Providers:
+- OpenAI
+- Anthropic Claude
+- Google Gemini
+- OpenRouter
+- Groq
+- Together AI
+- Azure OpenAI
+- AWS Bedrock
+
+Self-Hosted Providers:
+- Ollama
+- vLLM
+- TGI (Text Generation Inference)
+- llama.cpp
+- custom OpenAI-compatible endpoints
+
+Self-hosted models may include:
+- Mistral
+- Mixtral
+- Qwen
+- Gemma
+- DeepSeek
+- Llama
+- Phi
+- Codestral
+- custom fine-tuned models
+
+====================================================
+ADMIN-CONFIGURABLE LLM MANAGEMENT
+====================================================
+
+The platform MUST provide an Admin Panel for dynamic LLM management.
+
+Admins should be able to:
+
+1. Register LLM Providers
+- add API keys
+- configure endpoints
+- configure self-hosted model URLs
+- configure authentication
+- configure provider metadata
+
+2. Configure Models
+- register models dynamically
+- assign cost metadata
+- assign token limits
+- assign latency expectations
+- configure model capabilities
+
+3. Configure Agent-Level Routing
+Each agent should independently select models.
+
+Example:
+- Monitoring Agent → Gemma
+- RCA Agent → Claude Opus
+- Reporting Agent → GPT-4.1 Mini
+- ChatOps Agent → Qwen
+- Predictive Maintenance Agent → Mistral
+
+4. Configure Fallback Chains
+Admins must define fallback sequences.
+
+Example:
+Claude Opus
+    ↓ failure
+GPT-4.1
+    ↓ failure
+Qwen
+    ↓ failure
+Local Ollama model
+
+5. Configure Routing Policies
+Support:
+- cheapest model
+- lowest latency
+- highest reasoning quality
+- local-only inference
+- GPU-aware routing
+- compliance-aware routing
+
+====================================================
+PER-AGENT LLM CONFIGURATION
+====================================================
+
+Each Hermes agent MUST support independent LLM configuration.
+
+Every agent should have configurable:
+
+- primary model
+- fallback models
+- temperature
+- max tokens
+- reasoning mode
+- provider selection
+- timeout policies
+- retry policies
+
+Example:
+
+RCA Agent:
+- primary → Claude Opus
+- fallback → GPT-4.1
+- local fallback → Qwen 32B
+
+Reporting Agent:
+- primary → GPT-4.1 Mini
+- fallback → Gemma
+
+Monitoring Agent:
+- primary → Mistral
+- fallback → Phi
+
+====================================================
+LLM ROUTING ENGINE
+====================================================
+
+Implement an intelligent LLM routing engine.
+
+The router should support:
+
+- provider abstraction
+- model abstraction
+- dynamic failover
+- weighted routing
+- capability-aware routing
+- latency-aware routing
+- cost-aware routing
+- GPU-aware routing
+- local/cloud hybrid routing
+
+====================================================
+SELF-HOSTED MODEL SUPPORT
+====================================================
+
+The platform MUST support local/self-hosted inference.
+
+Supported deployment modes:
+- Ollama
+- vLLM
+- Kubernetes-hosted inference
+- GPU nodes
+- edge inference servers
+
+Self-hosted models should work exactly like cloud APIs through the gateway abstraction layer.
+
+====================================================
+LLM OBSERVABILITY
+====================================================
+
+Track:
+- token usage
+- latency
+- retries
+- model failures
+- fallback events
+- inference cost
+- provider health
+- throughput
+- reasoning duration
+
+Provide dashboards for:
+- per-agent usage
+- per-model usage
+- per-provider health
+- operational AI cost
+
+====================================================
+LLM GOVERNANCE
+====================================================
+
+Implement enterprise governance features:
+
+- RBAC for model access
+- API quotas
+- usage limits
+- audit logs
+- model approval workflows
+- provider isolation
+- tenant isolation
+- secure API key storage
+- encrypted credentials
+
+====================================================
+LLM GATEWAY API
+====================================================
+
+Expose a unified OpenAI-compatible API layer.
+
+All Hermes agents should communicate ONLY through the gateway abstraction layer.
+
+The agents should never directly call providers.
+
+====================================================
+LLM ARCHITECTURE
+====================================================
+
+Hermes Agents
+        ↓
+Generic LLM Gateway
+        ↓
+Routing Engine
+        ↓
+-----------------------------------
+| Cloud Providers                |
+| OpenAI                         |
+| Claude                         |
+| Gemini                         |
+| Groq                           |
+-----------------------------------
+        ↓
+-----------------------------------
+| Self-Hosted Providers          |
+| Ollama                         |
+| vLLM                           |
+| llama.cpp                      |
+| TGI                            |
+-----------------------------------
+
+====================================================
+ADMIN PANEL REQUIREMENTS
+====================================================
+
+Add dedicated Admin UI pages:
+
+1. LLM Providers
+2. Model Registry
+3. Agent Model Mapping
+4. Fallback Configuration
+5. Routing Policies
+6. AI Usage Analytics
+7. Provider Health Dashboard
+8. Cost Monitoring
+9. API Key Management
+10. Local Model Management
+
+====================================================
+IMPORTANT
+====================================================
+
+The architecture MUST support:
+- plug-and-play LLM providers
+- runtime model switching
+- hybrid cloud + local inference
+- enterprise-grade AI governance
+- multi-provider resiliency
+- highly configurable AI infrastructure
+
+The LLM layer should resemble a real enterprise AI gateway platform.
+```

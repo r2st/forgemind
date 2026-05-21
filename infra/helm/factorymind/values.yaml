@@ -8,7 +8,7 @@ global:
 config:
   environment: prod
   logLevel: INFO
-  postgresDsn: postgresql+asyncpg://forgemind:forgemind@postgres:5432/forgemind
+  # postgresDsn moved to secrets section - no hardcoded passwords
   redisUrl: redis://redis:6379/0
   natsUrl: nats://nats:4222
   telemetrySubject: forgemind.telemetry
@@ -24,7 +24,13 @@ config:
 secrets:
   # Inject via --set-string or external-secrets in prod.
   llmApiKey: ""
-  jwtSecret: "change-me"
+  # REQUIRED: Set via --set-string secrets.jwtSecret=<random-value>
+  jwtSecret: ""
+  # REQUIRED: Set via --set-string secrets.postgresUser and secrets.postgresPassword
+  postgresUser: ""
+  postgresPassword: ""
+  # Constructed from user/password above
+  postgresDsn: ""
 
 # Per-service resource + replica settings. Add more services by appending here.
 services:

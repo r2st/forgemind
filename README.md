@@ -10,7 +10,7 @@ It is built on three core layers:
 | ---- | ---- |
 | **Hermes Agent** (Nous Research) | Autonomous agents — RCA, PdM, Production Optimization, Reporting, ChatOps, Monitoring, plus a Supervisor that orchestrates them. Each agent has persistent memory, tool use, and skill reuse. |
 | **LangGraph** | Deterministic stateful workflow engine. Investigation, maintenance approval, remediation, and escalation flows run as graphs whose nodes wrap Hermes agents. |
-| **LLM API gateway** | Any OpenAI-compatible endpoint. Base URLs, models, API keys, and enabled state can be set globally or per agent from the Admin Panel. |
+| **Generic LLM Gateway** | Provider-agnostic OpenAI-compatible LLM layer. Works with **any** OpenAI-compatible endpoint: OpenAI, Anthropic (via proxy), Azure OpenAI, AWS Bedrock (via proxy), Google Vertex, Together, Groq, Fireworks, DeepInfra, OpenRouter, local servers (vLLM, llama.cpp, Ollama, TGI, SGLang), and **fine-tuned models** hosted on any compatible endpoint. Each agent can use a different provider, base URL, model, and API key configured via the Admin Panel or environment defaults. |
 
 ```
 Telemetry → Anomaly Detection → LangGraph Investigation
@@ -39,6 +39,7 @@ Then open:
 - **Grafana**: http://localhost:3000 (admin / admin)
 - **Prometheus**: http://localhost:9090
 - **Admin Panel**: http://localhost:5173/admin
+- **LLM Gateway Admin**: http://localhost:5173/llm-admin (provider registry, model config, routing, cost tracking)
 
 Drive the end-to-end demo:
 
@@ -47,6 +48,53 @@ Drive the end-to-end demo:
 ```
 
 This will inject six synthetic anomalies, wait for the anomaly detector to fire incidents, run the LangGraph `investigation` workflow on the first one, ask the Reporting Agent for an executive summary, and call the ChatOps Agent for a natural-language summary.
+
+## Bring Your Own Model
+
+ForgeMind's LLM layer is a **generic OpenAI-compatible gateway**. You can plug in any provider or fine-tuned model by serving it behind an OpenAI-compatible API and configuring the base URL + model + API key.
+
+### Fine-tuned model example
+
+1. **Serve your fine-tuned model** behind an OpenAI-compatible endpoint:
+   - **vLLM**: `vllm serve <your-model> --api-key <key>`
+   - **llama.cpp**: `./server -m model.gguf --port 8080`
+   - **TGI** (HuggingFace): `text-generation-launcher --model-id <your-model>`
+   - **Ollama**: `ollama serve` (defaults to `http://localhost:11434`)
+
+2. **Configure in the Admin Panel**:
+   - Open http://localhost:5173/admin
+   - Set the **base URL** (e.g., `http://localhost:8000/v1` for vLLM, `http://localhost:11434/v1` for Ollama)
+   - Set the **model** name (e.g., `my-fine-tuned-hermes-3`, or `llama3.2:3b` for Ollama)
+   - Set the **API key** if required by your server
+   - Click **Update Default Config** to apply globally, or configure per-agent for specialist routing (e.g., RCA Agent uses your fine-tuned model, ChatOps uses OpenAI GPT-4o)
+
+3. **Per-agent overrides**: Each agent (RCA, PdM, ChatOps, Reporting, Production Optimization, Monitoring, Supervisor) can have its own provider, base URL, model, and API key. This lets you:
+   - Route critical reasoning (RCA, PdM) to a fine-tuned industrial model
+   - Route fast classification (Monitoring, Remediation) to a cheaper/faster provider
+   - Keep ChatOps on a hosted model with long context support
+   - Mix local (Ollama/vLLM), hosted (OpenAI/Anthropic/Together), and fine-tuned models in one deployment
+
+### Supported providers (examples)
+
+All providers that expose an OpenAI-compatible `/v1/chat/completions` endpoint:
+
+- **OpenAI**: `base_url=https://api.openai.com/v1`, `model=gpt-4o`
+- **Anthropic** (via LiteLLM/OpenRouter): `base_url=https://openrouter.ai/api/v1`, `model=anthropic/claude-sonnet-4`
+- **Azure OpenAI**: `base_url=https://<resource>.openai.azure.com/openai/deployments/<deployment>`, `model=<deployment-name>`
+- **AWS Bedrock** (via LiteLLM proxy): `base_url=http://litellm:8000/v1`, `model=bedrock/anthropic.claude-3-sonnet`
+- **Google Vertex** (via LiteLLM proxy): `base_url=http://litellm:8000/v1`, `model=vertex_ai/gemini-2.0-flash-exp`
+- **Together**: `base_url=https://api.together.xyz/v1`, `model=mistralai/Mixtral-8x7B-Instruct-v0.1`
+- **Groq**: `base_url=https://api.groq.com/openai/v1`, `model=llama-3.3-70b-versatile`
+- **Fireworks**: `base_url=https://api.fireworks.ai/inference/v1`, `model=accounts/fireworks/models/llama-v3p1-70b-instruct`
+- **DeepInfra**: `base_url=https://api.deepinfra.com/v1/openai`, `model=meta-llama/Meta-Llama-3.1-70B-Instruct`
+- **OpenRouter**: `base_url=https://openrouter.ai/api/v1`, `model=<any-model-on-openrouter>`
+- **vLLM** (local/remote): `base_url=http://localhost:8000/v1`, `model=<your-model-name>`
+- **llama.cpp** (local): `base_url=http://localhost:8080/v1`, `model=<model-name>`
+- **Ollama** (local): `base_url=http://localhost:11434/v1`, `model=llama3.2:3b`
+- **TGI** (HuggingFace): `base_url=http://localhost:8080/v1`, `model=<model-id>`
+- **SGLang** (local/remote): `base_url=http://localhost:30000/v1`, `model=<model-path>`
+
+If a provider requires a proxy to expose the OpenAI-compatible format (e.g., AWS Bedrock, Google Vertex without native support), use [LiteLLM](https://github.com/BerriAI/litellm) or similar.
 
 ## Deploy to Kubernetes (Helm)
 
@@ -91,11 +139,54 @@ helm upgrade --install forgemind ./infra/helm/factorymind \
 10. **Admin Panel** — agent health checks, service readiness, per-agent API base URL/model/key configuration
 11. **Settings** — tier selection and identity
 
+## Testing
+
+The repository ships with a comprehensive end-to-end test suite under `tests/e2e/`
+that runs every service in-process — no Docker, no Postgres, no NATS, no real LLM
+provider required. **289 tests, 96% line coverage.**
+
+### Install test dependencies
+
+```bash
+pip install fastapi==0.110.0 'uvicorn[standard]==0.27.1' httpx==0.27.0 \
+  pydantic==2.6.4 pydantic-settings==2.2.1 structlog==24.1.0 \
+  prometheus-client==0.20.0 nats-py==2.7.2 'sqlalchemy[asyncio]==2.0.29' \
+  aiosqlite numpy==1.26.4 'python-jose[cryptography]==3.3.0' \
+  cryptography==42.0.2 pgvector==0.2.5 python-multipart==0.0.6 \
+  scikit-learn==1.4.1.post1 asyncpg==0.29.0 langgraph \
+  pytest pytest-asyncio pytest-cov
+```
+
+### Run the suite
+
+```bash
+# All E2E tests (≈20s)
+python3 -m pytest tests/e2e/
+
+# With coverage (needs the .coveragerc in repo root for thread tracing)
+python3 -m pytest tests/e2e/ \
+  --cov=shared/forgemind_common --cov=services \
+  --cov-config=.coveragerc --cov-report=term-missing
+```
+
+What gets tested:
+
+- **Per-service contracts** — health, CRUD, auth, validation for each of the 12 services
+- **Cross-service flows** — telemetry → anomaly → incident → investigation workflow → RCA → reporting → ChatOps, end-to-end through the API gateway
+- **LLM Gateway** — provider/model CRUD, agent routing, fallback chains, quotas, audit logging, three provider translators (OpenAI / Anthropic / Gemini)
+- **Shared library** — config, auth, messaging, LLM client, gateway, Hermes runtime, runtime config
+
+See [`tests/e2e/README.md`](tests/e2e/README.md) for the harness architecture
+(in-memory NATS broker, SQLite-backed Postgres replacement, mocked LLM gateway,
+ASGI routing transport that wires the services together).
+
 ## Documentation
 
 - [ARCHITECTURE.md](docs/ARCHITECTURE.md) — service map, data flow, integration seams
 - [DEPLOYMENT.md](docs/DEPLOYMENT.md) — Docker and Kubernetes walkthrough
 - [API.md](docs/API.md) — REST surface for every service
+- [LLM_GATEWAY_API.md](docs/LLM_GATEWAY_API.md) — full LLM Gateway admin + inference API
+- [tests/e2e/README.md](tests/e2e/README.md) — end-to-end test harness architecture
 - [forgemind-ai-platform.html](docs/forgemind-ai-platform.html) - standalone HTML platform documentation with a floating table of contents
 - [forgemind-ai-features-summary.html](docs/forgemind-ai-features-summary.html) - short, simple feature summary for demos and non-technical audiences
 - [AGENTS.md](AGENTS.md) — manufacturing domain context loaded by every Hermes agent

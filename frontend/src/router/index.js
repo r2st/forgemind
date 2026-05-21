@@ -11,6 +11,7 @@ const routes = [
   { path: '/executive',              name: 'executive',  component: () => import('../views/ExecutiveReports.vue') },
   { path: '/agents',                 name: 'agents',     component: () => import('../views/AgentActivity.vue') },
   { path: '/admin',                  name: 'admin',      component: () => import('../views/AdminPanel.vue') },
+  { path: '/llm-admin',              name: 'llm-admin',  component: () => import('../views/LLMAdmin.vue') },
   { path: '/settings',               name: 'settings',   component: () => import('../views/Settings.vue') },
 ]
 

@@ -3,6 +3,7 @@
 from .config import Settings, get_settings
 from .logging import get_logger, setup_logging
 from .llm_gateway import LLMGateway, ModelTier, get_gateway
+from .llm_client import LLMClient, LLMResponse, LLMUsage, get_llm_client
 from .schemas import (
     TelemetryReading,
     Incident,
@@ -43,6 +44,10 @@ __all__ = [
     "LLMGateway",
     "ModelTier",
     "get_gateway",
+    "LLMClient",
+    "LLMResponse",
+    "LLMUsage",
+    "get_llm_client",
     "TelemetryReading",
     "Incident",
     "IncidentSeverity",

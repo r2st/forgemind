@@ -6,7 +6,6 @@ metadata:
 data:
   ENVIRONMENT: {{ .Values.config.environment | quote }}
   LOG_LEVEL: {{ .Values.config.logLevel | quote }}
-  POSTGRES_DSN: {{ .Values.config.postgresDsn | quote }}
   REDIS_URL: {{ .Values.config.redisUrl | quote }}
   NATS_URL: {{ .Values.config.natsUrl | quote }}
   TELEMETRY_SUBJECT: {{ .Values.config.telemetrySubject | quote }}
@@ -27,3 +26,6 @@ type: Opaque
 stringData:
   OPENAI_API_KEY: {{ .Values.secrets.llmApiKey | quote }}
   JWT_SECRET: {{ .Values.secrets.jwtSecret | quote }}
+  POSTGRES_USER: {{ .Values.secrets.postgresUser | quote }}
+  POSTGRES_PASSWORD: {{ .Values.secrets.postgresPassword | quote }}
+  POSTGRES_DSN: {{ .Values.secrets.postgresDsn | default (printf "postgresql+asyncpg://%s:%s@postgres:5432/forgemind" .Values.secrets.postgresUser .Values.secrets.postgresPassword) | quote }}

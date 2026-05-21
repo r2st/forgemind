@@ -10,6 +10,7 @@ const nav = [
   { to: '/executive',              label: 'Executive Reports',   icon: '∎' },
   { to: '/agents',                 label: 'AI Agent Activity',   icon: '☉' },
   { to: '/admin',                  label: 'Admin Panel',         icon: '◉' },
+  { to: '/llm-admin',              label: 'LLM Gateway',         icon: '⌬' },
   { to: '/settings',               label: 'Settings',            icon: '✱' },
 ]
 </script>

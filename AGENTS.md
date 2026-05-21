@@ -49,6 +49,17 @@ Anything sustained outside band for ≥5 s deserves investigation.
 - **ChatOps Agent** — natural-language interface; delegates to the above.
 - **Supervisor (Orchestrator)** — routes requests to the right specialist.
 
+Each agent routes through a **generic OpenAI-compatible LLM gateway**. The system
+supports any provider (OpenAI, Anthropic, Azure, Bedrock, Vertex, Together, Groq,
+Fireworks, DeepInfra, OpenRouter, vLLM, llama.cpp, Ollama, TGI, SGLang) or
+fine-tuned model. Each agent can use a different provider, base URL, model, and
+API key configured via the Admin Panel.
+
+**All agents route LLM calls through `LLM_GATEWAY_URL` and never call providers directly.**
+The gateway handles routing, fallbacks, cost tracking, and observability. Agents use the
+`forgemind_common.llm_client.LLMClient` wrapper to communicate with the gateway, which
+automatically includes the agent identifier in the `X-Agent` header for proper routing.
+
 ## Tooling
 
 Every agent reaches our backend via tool calls (HTTP to internal services or
