@@ -1,0 +1,11 @@
+name: forgemind
+type: workspace
+cluster: ${TFY_CLUSTER:-default}
+namespace: forgemind
+labels:
+  product: forgemind-ai
+  owner: platform-eng
+resource_quota:
+  cpu_limit: "32"
+  memory_limit: "64Gi"
+  pod_limit: 60

@@ -1,0 +1,7 @@
+apiVersion: 1
+providers:
+  - name: ForgeMind
+    folder: ForgeMind
+    type: file
+    options:
+      path: /var/lib/grafana/dashboards

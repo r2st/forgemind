@@ -1,0 +1,59 @@
+name: telemetry-simulator
+type: service
+workspace_fqn: ${TFY_WORKSPACE}
+
+image:
+  type: build
+  build_source:
+    type: git
+    repo_url: https://github.com/r2st/forgemind
+    ref: main
+    project_root_path: .
+  build_spec:
+    type: dockerfile
+    dockerfile_path: services/telemetry-simulator/Dockerfile
+
+ports:
+  - port: 8000
+    host: telemetry-simulator-${TFY_WORKSPACE}.${TFY_DOMAIN}
+    expose: true
+    protocol: TCP
+
+resources:
+  cpu_request: 0.2
+  cpu_limit: 2
+  memory_request: 256
+  memory_limit: 512
+
+replicas: 1
+
+autoscaling:
+  min_replicas: 1
+  max_replicas: 1
+  metrics:
+    - { type: cpu, target: 70 }
+    - { type: requests_per_second, target: 80 }
+
+env:
+  ENVIRONMENT: prod
+  LOG_LEVEL: INFO
+  SERVICE_NAME: telemetry-simulator
+  POSTGRES_DSN: ${POSTGRES_DSN}
+  REDIS_URL: ${REDIS_URL}
+  NATS_URL: ${NATS_URL}
+  TFY_GATEWAY_BASE_URL: ${TFY_GATEWAY_BASE_URL}
+  TFY_GATEWAY_API_KEY: tfy-secret://forgemind/tfy-gateway-key
+  JWT_SECRET: tfy-secret://forgemind/jwt-secret
+  TFY_WORKSPACE: ${TFY_WORKSPACE}
+  TFY_MODEL_FAST: openai-main/gpt-4o-mini
+  TFY_MODEL_POWERFUL: anthropic-main/claude-sonnet-4-5
+  TFY_MODEL_EMBEDDING: openai-main/text-embedding-3-small
+  TFY_MODEL_FALLBACK: ollama-local/llama3.1:8b
+
+health_check: { path: /healthz, initial_delay_seconds: 10, period_seconds: 10 }
+ready_check:  { path: /readyz,  initial_delay_seconds: 5,  period_seconds: 5  }
+
+observability:
+  prometheus:    { enabled: true, path: /metrics }
+  opentelemetry: { enabled: true }
+  log_collector: { enabled: true }

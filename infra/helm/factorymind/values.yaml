@@ -1,0 +1,122 @@
+global:
+  namespace: forgemind
+  image:
+    registry: ghcr.io/forgemind
+    tag: latest
+    pullPolicy: IfNotPresent
+
+config:
+  environment: prod
+  logLevel: INFO
+  postgresDsn: postgresql+asyncpg://forgemind:forgemind@postgres:5432/forgemind
+  redisUrl: redis://redis:6379/0
+  natsUrl: nats://nats:4222
+  telemetrySubject: forgemind.telemetry
+  incidentsSubject: forgemind.incidents
+  tfy:
+    gatewayBaseUrl: https://llm-gateway.truefoundry.com
+    workspace: forgemind
+    modelFast: openai-main/gpt-4o-mini
+    modelPowerful: anthropic-main/claude-sonnet-4-5
+    modelEmbedding: openai-main/text-embedding-3-small
+    modelFallback: ollama-local/llama3.1:8b
+
+secrets:
+  # Inject via --set-string or external-secrets in prod.
+  tfyApiKey: ""
+  jwtSecret: "change-me"
+
+# Per-service resource + replica settings. Add more services by appending here.
+services:
+  - name: api-gateway
+    port: 8000
+    replicas: 2
+    minReplicas: 2
+    maxReplicas: 6
+    cpu: "200m"
+    memory: "256Mi"
+    cpuLimit: "1"
+    memoryLimit: "512Mi"
+  - name: telemetry-simulator
+    port: 8000
+    replicas: 1
+    cpu: "100m"
+    memory: "256Mi"
+  - name: telemetry-ingestion
+    port: 8000
+    replicas: 2
+    cpu: "100m"
+    memory: "256Mi"
+  - name: anomaly-detection
+    port: 8000
+    replicas: 2
+    minReplicas: 2
+    maxReplicas: 10
+    cpu: "300m"
+    memory: "512Mi"
+    cpuLimit: "1500m"
+    memoryLimit: "1Gi"
+  - name: rca-service
+    port: 8000
+    replicas: 2
+    minReplicas: 2
+    maxReplicas: 6
+    cpu: "300m"
+    memory: "512Mi"
+  - name: predictive-maintenance
+    port: 8000
+    replicas: 2
+    minReplicas: 1
+    maxReplicas: 4
+    cpu: "200m"
+    memory: "256Mi"
+  - name: ai-orchestrator
+    port: 8000
+    replicas: 2
+    minReplicas: 2
+    maxReplicas: 6
+    cpu: "300m"
+    memory: "512Mi"
+  - name: workflow-engine
+    port: 8000
+    replicas: 2
+    minReplicas: 1
+    maxReplicas: 6
+    cpu: "300m"
+    memory: "512Mi"
+  - name: chatops-service
+    port: 8000
+    replicas: 2
+    minReplicas: 2
+    maxReplicas: 8
+    cpu: "200m"
+    memory: "256Mi"
+  - name: reporting-service
+    port: 8000
+    replicas: 1
+    cpu: "200m"
+    memory: "256Mi"
+  - name: notification-service
+    port: 8000
+    replicas: 1
+    cpu: "100m"
+    memory: "128Mi"
+  - name: frontend
+    port: 80
+    replicas: 2
+    cpu: "50m"
+    memory: "64Mi"
+
+ingress:
+  enabled: true
+  host: forgemind.local
+  className: nginx
+
+infra:
+  postgres:
+    enabled: true
+    storage: 20Gi
+  redis:
+    enabled: true
+  nats:
+    enabled: true

@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: forgemind-config
+  namespace: forgemind
+data:
+  ENVIRONMENT: "prod"
+  LOG_LEVEL: "INFO"
+  POSTGRES_DSN: "postgresql+asyncpg://forgemind:forgemind@postgres.forgemind:5432/forgemind"
+  REDIS_URL: "redis://redis.forgemind:6379/0"
+  NATS_URL: "nats://nats.forgemind:4222"
+  TELEMETRY_SUBJECT: "forgemind.telemetry"
+  INCIDENTS_SUBJECT: "forgemind.incidents"
+  TFY_GATEWAY_BASE_URL: "https://llm-gateway.truefoundry.com"
+  TFY_WORKSPACE: "forgemind"
+  TFY_MODEL_FAST: "openai-main/gpt-4o-mini"
+  TFY_MODEL_POWERFUL: "anthropic-main/claude-sonnet-4-5"
+  TFY_MODEL_EMBEDDING: "openai-main/text-embedding-3-small"
+  TFY_MODEL_FALLBACK: "ollama-local/llama3.1:8b"

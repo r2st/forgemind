@@ -1,0 +1,45 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html, body, #app { height: 100%; }
+  body {
+    font-family: 'Inter', system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+}
+
+@layer components {
+  .card {
+    @apply bg-ink-800 border border-ink-600 rounded-xl p-5;
+  }
+  .card-tight { @apply bg-ink-800 border border-ink-600 rounded-lg p-4; }
+  .pill {
+    @apply inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium;
+  }
+  .pill-info     { @apply bg-slate-700 text-slate-200; }
+  .pill-low      { @apply bg-blue-900 text-blue-200; }
+  .pill-medium   { @apply bg-warn-600/30 text-warn-500; }
+  .pill-high     { @apply bg-orange-700/30 text-orange-300; }
+  .pill-critical { @apply bg-crit-600/30 text-crit-500 animate-pulse; }
+
+  .btn {
+    @apply inline-flex items-center justify-center px-3 py-2 text-sm font-medium rounded-lg transition;
+  }
+  .btn-primary   { @apply btn bg-accent-600 text-ink-900 hover:bg-accent-500; }
+  .btn-secondary { @apply btn bg-ink-600 text-slate-100 hover:bg-ink-500; }
+  .btn-danger    { @apply btn bg-crit-600 text-white hover:bg-crit-500; }
+
+  .stat {
+    @apply card flex flex-col gap-1;
+  }
+  .stat-label { @apply text-xs uppercase tracking-wider text-slate-400; }
+  .stat-value { @apply text-2xl font-semibold text-slate-100 font-mono; }
+  .stat-delta { @apply text-xs text-slate-400 font-mono; }
+}
+
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { @apply bg-ink-900; }
+::-webkit-scrollbar-thumb { @apply bg-ink-600 rounded-full; }
+::-webkit-scrollbar-thumb:hover { @apply bg-ink-500; }

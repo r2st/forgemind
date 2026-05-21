@@ -1,0 +1,79 @@
+{{- range .Values.services }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .name }}
+  namespace: {{ $.Values.global.namespace }}
+  labels:
+    app.kubernetes.io/name: {{ .name }}
+    app.kubernetes.io/part-of: forgemind-ai
+spec:
+  replicas: {{ .replicas | default 1 }}
+  selector:
+    matchLabels:
+      app: {{ .name }}
+  template:
+    metadata:
+      labels:
+        app: {{ .name }}
+    spec:
+      containers:
+        - name: app
+          image: "{{ $.Values.global.image.registry }}/{{ .name }}:{{ $.Values.global.image.tag }}"
+          imagePullPolicy: {{ $.Values.global.image.pullPolicy }}
+          ports:
+            - containerPort: {{ .port }}
+          envFrom:
+            - configMapRef: { name: forgemind-config }
+            - secretRef:    { name: forgemind-secrets }
+          env:
+            - { name: SERVICE_NAME, value: {{ .name | quote }} }
+          {{- if ne .name "frontend" }}
+          readinessProbe:
+            httpGet: { path: /readyz, port: {{ .port }} }
+            periodSeconds: 5
+          livenessProbe:
+            httpGet: { path: /healthz, port: {{ .port }} }
+            periodSeconds: 10
+          {{- end }}
+          resources:
+            requests:
+              cpu: {{ .cpu | default "100m" | quote }}
+              memory: {{ .memory | default "128Mi" | quote }}
+            limits:
+              cpu: {{ .cpuLimit | default "1" | quote }}
+              memory: {{ .memoryLimit | default "512Mi" | quote }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .name }}
+  namespace: {{ $.Values.global.namespace }}
+spec:
+  selector:
+    app: {{ .name }}
+  ports:
+    - port: {{ .port }}
+      targetPort: {{ .port }}
+{{- if and (.minReplicas) (.maxReplicas) }}
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: {{ .name }}-hpa
+  namespace: {{ $.Values.global.namespace }}
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: {{ .name }}
+  minReplicas: {{ .minReplicas }}
+  maxReplicas: {{ .maxReplicas }}
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target: { type: Utilization, averageUtilization: 70 }
+{{- end }}
+{{- end }}

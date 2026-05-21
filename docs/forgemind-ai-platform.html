@@ -1,0 +1,1476 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>ForgeMind AI Platform Documentation</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg: #080b10;
+        --bg-soft: #0e141d;
+        --panel: rgba(17, 24, 34, 0.9);
+        --panel-strong: #131c28;
+        --line: rgba(148, 163, 184, 0.2);
+        --line-strong: rgba(148, 163, 184, 0.36);
+        --text: #eef4ff;
+        --muted: #a8b3c4;
+        --subtle: #758195;
+        --cyan: #4dd7ff;
+        --green: #74e2a3;
+        --amber: #f5c46b;
+        --red: #ff7b86;
+        --violet: #bca7ff;
+        --blue: #79a8ff;
+        --shadow: 0 24px 80px rgba(0, 0, 0, 0.42);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html {
+        scroll-behavior: smooth;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        background:
+          radial-gradient(circle at 82% 8%, rgba(77, 215, 255, 0.14), transparent 28rem),
+          radial-gradient(circle at 5% 38%, rgba(116, 226, 163, 0.08), transparent 26rem),
+          linear-gradient(135deg, #080b10 0%, #0d1118 54%, #070a0f 100%);
+        color: var(--text);
+        font-family:
+          Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+          sans-serif;
+        line-height: 1.55;
+      }
+
+      a {
+        color: inherit;
+        text-decoration: none;
+      }
+
+      code,
+      pre {
+        font-family:
+          "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+      }
+
+      .page-shell {
+        display: grid;
+        grid-template-columns: 304px minmax(0, 1fr);
+        gap: 36px;
+        min-height: 100vh;
+      }
+
+      .toc {
+        position: sticky;
+        top: 0;
+        height: 100vh;
+        padding: 24px 0 24px 24px;
+      }
+
+      .toc-card {
+        height: calc(100vh - 48px);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: rgba(10, 14, 21, 0.78);
+        box-shadow: var(--shadow);
+        backdrop-filter: blur(18px);
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+      }
+
+      .toc-header {
+        padding: 22px 22px 18px;
+        border-bottom: 1px solid var(--line);
+      }
+
+      .toc-kicker {
+        color: var(--green);
+        font-size: 0.72rem;
+        font-weight: 800;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+      }
+
+      .toc-title {
+        margin: 8px 0 3px;
+        font-size: 1.15rem;
+        font-weight: 800;
+        letter-spacing: 0;
+      }
+
+      .toc-subtitle {
+        margin: 0;
+        color: var(--muted);
+        font-size: 0.86rem;
+      }
+
+      .toc-nav {
+        padding: 12px;
+        overflow-y: auto;
+      }
+
+      .toc-nav a {
+        display: block;
+        border-radius: 8px;
+        padding: 9px 10px;
+        color: var(--muted);
+        font-size: 0.9rem;
+        border: 1px solid transparent;
+        transition:
+          color 160ms ease,
+          background 160ms ease,
+          border-color 160ms ease,
+          transform 160ms ease;
+      }
+
+      .toc-nav a:hover,
+      .toc-nav a.active {
+        color: var(--text);
+        background: rgba(77, 215, 255, 0.1);
+        border-color: rgba(77, 215, 255, 0.24);
+        transform: translateX(3px);
+      }
+
+      .toc-footer {
+        margin-top: auto;
+        padding: 15px 18px 18px;
+        border-top: 1px solid var(--line);
+        color: var(--subtle);
+        font-size: 0.78rem;
+      }
+
+      main {
+        width: min(1180px, calc(100vw - 380px));
+        padding: 24px 36px 80px 0;
+      }
+
+      .hero {
+        min-height: 78vh;
+        display: grid;
+        align-items: center;
+        padding: 72px 0 44px;
+      }
+
+      .hero-card {
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background:
+          linear-gradient(145deg, rgba(19, 28, 40, 0.94), rgba(9, 13, 19, 0.92)),
+          repeating-linear-gradient(
+            90deg,
+            rgba(255, 255, 255, 0.03) 0,
+            rgba(255, 255, 255, 0.03) 1px,
+            transparent 1px,
+            transparent 68px
+          );
+        box-shadow: var(--shadow);
+        overflow: hidden;
+      }
+
+      .hero-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 1.08fr) minmax(340px, 0.92fr);
+        gap: 0;
+      }
+
+      .hero-copy {
+        padding: 56px;
+      }
+
+      .eyebrow {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        color: var(--green);
+        font-size: 0.74rem;
+        font-weight: 800;
+        letter-spacing: 0.13em;
+        text-transform: uppercase;
+      }
+
+      .eyebrow::before {
+        content: "";
+        width: 9px;
+        height: 9px;
+        border-radius: 50%;
+        background: var(--green);
+        box-shadow: 0 0 18px rgba(116, 226, 163, 0.7);
+      }
+
+      h1 {
+        margin: 20px 0 18px;
+        max-width: 820px;
+        font-size: clamp(3rem, 7vw, 6.4rem);
+        line-height: 0.92;
+        letter-spacing: 0;
+      }
+
+      .hero-lede {
+        max-width: 780px;
+        color: #c8d4e4;
+        font-size: clamp(1.05rem, 1.6vw, 1.28rem);
+      }
+
+      .hero-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        margin-top: 30px;
+      }
+
+      .button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 9px;
+        min-height: 42px;
+        border-radius: 8px;
+        padding: 0 16px;
+        border: 1px solid var(--line-strong);
+        color: var(--text);
+        background: rgba(255, 255, 255, 0.045);
+        font-weight: 760;
+        font-size: 0.9rem;
+        transition:
+          border-color 160ms ease,
+          background 160ms ease,
+          transform 160ms ease;
+      }
+
+      .button.primary {
+        background: linear-gradient(135deg, #36c8f4, #55dc9a);
+        color: #041016;
+        border-color: transparent;
+      }
+
+      .button:hover {
+        transform: translateY(-1px);
+        border-color: rgba(77, 215, 255, 0.52);
+      }
+
+      .hero-visual {
+        min-height: 560px;
+        border-left: 1px solid var(--line);
+        background:
+          linear-gradient(rgba(10, 14, 21, 0.28), rgba(10, 14, 21, 0.28)),
+          linear-gradient(135deg, rgba(77, 215, 255, 0.16), rgba(116, 226, 163, 0.08)),
+          repeating-linear-gradient(
+            0deg,
+            rgba(148, 163, 184, 0.1) 0,
+            rgba(148, 163, 184, 0.1) 1px,
+            transparent 1px,
+            transparent 48px
+          ),
+          repeating-linear-gradient(
+            90deg,
+            rgba(148, 163, 184, 0.08) 0,
+            rgba(148, 163, 184, 0.08) 1px,
+            transparent 1px,
+            transparent 48px
+          );
+        padding: 34px;
+        display: grid;
+        align-content: center;
+        gap: 18px;
+      }
+
+      .plant-map {
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: rgba(4, 8, 13, 0.52);
+        padding: 20px;
+      }
+
+      .factory-row {
+        display: grid;
+        grid-template-columns: 82px repeat(4, minmax(0, 1fr));
+        gap: 10px;
+        align-items: center;
+        margin-bottom: 10px;
+      }
+
+      .factory-row:last-child {
+        margin-bottom: 0;
+      }
+
+      .line-label {
+        color: var(--muted);
+        font-size: 0.78rem;
+        font-weight: 750;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+      }
+
+      .machine {
+        min-height: 56px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: rgba(255, 255, 255, 0.045);
+        padding: 10px;
+        display: grid;
+        align-content: space-between;
+      }
+
+      .machine.warning {
+        border-color: rgba(245, 196, 107, 0.8);
+        box-shadow: inset 0 0 0 1px rgba(245, 196, 107, 0.16);
+      }
+
+      .machine.critical {
+        border-color: rgba(255, 123, 134, 0.85);
+        box-shadow: inset 0 0 0 1px rgba(255, 123, 134, 0.18);
+      }
+
+      .machine strong {
+        font-size: 0.78rem;
+      }
+
+      .machine span {
+        color: var(--subtle);
+        font-size: 0.72rem;
+      }
+
+      .signal-panel {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 12px;
+      }
+
+      .signal {
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: rgba(4, 8, 13, 0.55);
+        padding: 14px;
+      }
+
+      .signal span {
+        display: block;
+        color: var(--subtle);
+        font-size: 0.72rem;
+        font-weight: 760;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      .signal strong {
+        display: block;
+        margin-top: 7px;
+        font-size: 1.2rem;
+      }
+
+      section {
+        scroll-margin-top: 24px;
+        margin-top: 26px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: rgba(13, 18, 27, 0.74);
+        box-shadow: 0 18px 70px rgba(0, 0, 0, 0.2);
+        overflow: hidden;
+      }
+
+      .section-inner {
+        padding: 34px;
+      }
+
+      .section-header {
+        display: grid;
+        gap: 9px;
+        margin-bottom: 24px;
+      }
+
+      .section-label {
+        color: var(--cyan);
+        font-size: 0.72rem;
+        font-weight: 850;
+        letter-spacing: 0.13em;
+        text-transform: uppercase;
+      }
+
+      h2 {
+        margin: 0;
+        font-size: clamp(1.75rem, 3vw, 2.6rem);
+        line-height: 1.04;
+        letter-spacing: 0;
+      }
+
+      h3 {
+        margin: 0 0 12px;
+        font-size: 1.06rem;
+        letter-spacing: 0;
+      }
+
+      p {
+        margin: 0 0 16px;
+        color: var(--muted);
+      }
+
+      .lead {
+        max-width: 910px;
+        color: #c7d3e3;
+        font-size: 1.04rem;
+      }
+
+      .grid {
+        display: grid;
+        gap: 16px;
+      }
+
+      .grid.two {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .grid.three {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+
+      .grid.four {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+      }
+
+      .card {
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: rgba(255, 255, 255, 0.035);
+        padding: 18px;
+      }
+
+      .card.accent-cyan {
+        border-top: 3px solid var(--cyan);
+      }
+
+      .card.accent-green {
+        border-top: 3px solid var(--green);
+      }
+
+      .card.accent-amber {
+        border-top: 3px solid var(--amber);
+      }
+
+      .card.accent-red {
+        border-top: 3px solid var(--red);
+      }
+
+      .card p:last-child,
+      .section-inner > p:last-child {
+        margin-bottom: 0;
+      }
+
+      .metric-row {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 12px;
+      }
+
+      .metric {
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: rgba(0, 0, 0, 0.2);
+        padding: 16px;
+      }
+
+      .metric span {
+        color: var(--subtle);
+        display: block;
+        font-size: 0.72rem;
+        font-weight: 800;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      .metric strong {
+        display: block;
+        margin-top: 7px;
+        font-size: 1.35rem;
+      }
+
+      .diagram {
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background:
+          linear-gradient(145deg, rgba(6, 10, 16, 0.92), rgba(15, 22, 32, 0.86)),
+          repeating-linear-gradient(
+            90deg,
+            rgba(255, 255, 255, 0.025) 0,
+            rgba(255, 255, 255, 0.025) 1px,
+            transparent 1px,
+            transparent 40px
+          );
+        padding: 22px;
+        overflow-x: auto;
+      }
+
+      .flow {
+        display: grid;
+        grid-template-columns: repeat(7, minmax(138px, 1fr));
+        gap: 10px;
+        align-items: stretch;
+        min-width: 960px;
+      }
+
+      .flow-node {
+        position: relative;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: rgba(255, 255, 255, 0.045);
+        padding: 14px;
+        min-height: 86px;
+      }
+
+      .flow-node:not(:last-child)::after {
+        content: ">";
+        position: absolute;
+        top: 50%;
+        right: -10px;
+        transform: translate(50%, -50%);
+        color: var(--cyan);
+        font-weight: 900;
+      }
+
+      .flow-node strong {
+        display: block;
+        margin-bottom: 6px;
+      }
+
+      .flow-node span {
+        color: var(--muted);
+        font-size: 0.82rem;
+      }
+
+      .architecture-layers {
+        display: grid;
+        gap: 14px;
+      }
+
+      .layer {
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        padding: 18px;
+        background: rgba(255, 255, 255, 0.035);
+        display: grid;
+        grid-template-columns: 180px minmax(0, 1fr);
+        gap: 18px;
+        align-items: start;
+      }
+
+      .layer strong {
+        color: var(--text);
+        font-size: 1.04rem;
+      }
+
+      .layer p {
+        margin: 0;
+      }
+
+      .badge-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 14px;
+      }
+
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        min-height: 26px;
+        border-radius: 999px;
+        border: 1px solid var(--line);
+        background: rgba(255, 255, 255, 0.042);
+        color: #d7e2f0;
+        padding: 0 10px;
+        font-size: 0.78rem;
+        font-weight: 720;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        min-width: 760px;
+      }
+
+      .table-wrap {
+        overflow-x: auto;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+      }
+
+      th,
+      td {
+        border-bottom: 1px solid var(--line);
+        padding: 12px 13px;
+        text-align: left;
+        vertical-align: top;
+      }
+
+      th {
+        background: rgba(255, 255, 255, 0.045);
+        color: var(--text);
+        font-size: 0.77rem;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      td {
+        color: var(--muted);
+        font-size: 0.91rem;
+      }
+
+      tr:last-child td {
+        border-bottom: 0;
+      }
+
+      .severity {
+        display: inline-flex;
+        min-height: 24px;
+        align-items: center;
+        border-radius: 999px;
+        padding: 0 9px;
+        font-size: 0.72rem;
+        font-weight: 850;
+        letter-spacing: 0.04em;
+      }
+
+      .severity.critical {
+        background: rgba(255, 123, 134, 0.12);
+        color: #ff9ba3;
+        border: 1px solid rgba(255, 123, 134, 0.36);
+      }
+
+      .severity.high {
+        background: rgba(245, 196, 107, 0.12);
+        color: #f7ce82;
+        border: 1px solid rgba(245, 196, 107, 0.36);
+      }
+
+      .severity.medium {
+        background: rgba(77, 215, 255, 0.12);
+        color: #85e3ff;
+        border: 1px solid rgba(77, 215, 255, 0.34);
+      }
+
+      .severity.low {
+        background: rgba(116, 226, 163, 0.12);
+        color: #96ebba;
+        border: 1px solid rgba(116, 226, 163, 0.32);
+      }
+
+      ul,
+      ol {
+        margin: 0;
+        padding-left: 20px;
+        color: var(--muted);
+      }
+
+      li {
+        margin: 7px 0;
+      }
+
+      .code-block {
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: #05080c;
+        overflow-x: auto;
+      }
+
+      pre {
+        margin: 0;
+        padding: 17px;
+        color: #cde4ff;
+        font-size: 0.86rem;
+        line-height: 1.55;
+      }
+
+      .service-list {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+      }
+
+      .service {
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: rgba(255, 255, 255, 0.035);
+        padding: 15px;
+      }
+
+      .service strong {
+        display: block;
+        color: var(--text);
+        margin-bottom: 5px;
+      }
+
+      .service span {
+        color: var(--muted);
+        font-size: 0.9rem;
+      }
+
+      .timeline {
+        display: grid;
+        gap: 10px;
+        counter-reset: step;
+      }
+
+      .timeline-item {
+        position: relative;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: rgba(255, 255, 255, 0.035);
+        padding: 16px 16px 16px 54px;
+      }
+
+      .timeline-item::before {
+        counter-increment: step;
+        content: counter(step);
+        position: absolute;
+        left: 16px;
+        top: 16px;
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        background: rgba(77, 215, 255, 0.14);
+        color: var(--cyan);
+        display: grid;
+        place-items: center;
+        font-size: 0.78rem;
+        font-weight: 850;
+      }
+
+      .timeline-item strong {
+        display: block;
+        color: var(--text);
+        margin-bottom: 4px;
+      }
+
+      .timeline-item span {
+        color: var(--muted);
+      }
+
+      .footer-note {
+        padding: 28px 0 8px;
+        color: var(--subtle);
+        font-size: 0.86rem;
+      }
+
+      @media (max-width: 1180px) {
+        .page-shell {
+          grid-template-columns: 1fr;
+        }
+
+        .toc {
+          position: fixed;
+          left: 12px;
+          right: 12px;
+          top: 12px;
+          height: auto;
+          padding: 0;
+          z-index: 20;
+          pointer-events: none;
+        }
+
+        .toc-card {
+          height: auto;
+          max-height: 72px;
+          pointer-events: auto;
+          transition: max-height 180ms ease;
+        }
+
+        .toc-card:hover,
+        .toc-card:focus-within {
+          max-height: 78vh;
+        }
+
+        .toc-header {
+          padding: 14px 16px;
+        }
+
+        .toc-title {
+          margin: 4px 0 0;
+        }
+
+        .toc-subtitle,
+        .toc-footer {
+          display: none;
+        }
+
+        .toc-nav {
+          border-top: 1px solid var(--line);
+        }
+
+        main {
+          width: min(100%, 1040px);
+          margin: 0 auto;
+          padding: 86px 18px 60px;
+        }
+
+        .hero {
+          min-height: auto;
+          padding-top: 34px;
+        }
+
+        .hero-grid,
+        .grid.two,
+        .grid.three,
+        .grid.four,
+        .service-list,
+        .metric-row {
+          grid-template-columns: 1fr;
+        }
+
+        .hero-copy {
+          padding: 34px;
+        }
+
+        .hero-visual {
+          border-left: 0;
+          border-top: 1px solid var(--line);
+          min-height: auto;
+        }
+
+        .factory-row {
+          grid-template-columns: 70px repeat(2, minmax(0, 1fr));
+        }
+
+        .signal-panel {
+          grid-template-columns: 1fr;
+        }
+
+        .layer {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      @media (max-width: 620px) {
+        .hero-copy,
+        .hero-visual,
+        .section-inner {
+          padding: 22px;
+        }
+
+        .factory-row {
+          grid-template-columns: 1fr;
+        }
+
+        h1 {
+          font-size: 3.1rem;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="page-shell">
+      <aside class="toc" aria-label="Table of contents">
+        <div class="toc-card">
+          <div class="toc-header">
+            <div class="toc-kicker">Documentation</div>
+            <div class="toc-title">ForgeMind AI</div>
+            <p class="toc-subtitle">Autonomous manufacturing intelligence platform</p>
+          </div>
+          <nav class="toc-nav">
+            <a href="#overview">Overview</a>
+            <a href="#architecture">Architecture</a>
+            <a href="#data">Industrial Data</a>
+            <a href="#agents">Hermes Agents</a>
+            <a href="#workflows">LangGraph Workflows</a>
+            <a href="#truefoundry">TrueFoundry Layer</a>
+            <a href="#services">Microservices</a>
+            <a href="#features">Advanced Features</a>
+            <a href="#product">Product UI</a>
+            <a href="#security">Security</a>
+            <a href="#observability">Observability</a>
+            <a href="#api">API Surface</a>
+            <a href="#deployment">Deployment</a>
+            <a href="#demo">Demo Flow</a>
+          </nav>
+          <div class="toc-footer">
+            Built as a static, self-contained HTML reference for the ForgeMind AI repository.
+          </div>
+        </div>
+      </aside>
+
+      <main>
+        <header class="hero" id="top">
+          <div class="hero-card">
+            <div class="hero-grid">
+              <div class="hero-copy">
+                <div class="eyebrow">Enterprise Industrial AI SaaS</div>
+                <h1>ForgeMind AI</h1>
+                <p class="hero-lede">
+                  ForgeMind AI is an autonomous manufacturing operations copilot for discrete
+                  manufacturing plants. It monitors telemetry, detects anomalies, coordinates
+                  specialist agents, runs deterministic investigations, predicts failures, and
+                  produces operational intelligence for operators, engineers, and executives.
+                </p>
+                <div class="hero-actions">
+                  <a class="button primary" href="#architecture">Explore architecture</a>
+                  <a class="button" href="#demo">View demo flow</a>
+                  <a class="button" href="#api">API reference</a>
+                </div>
+              </div>
+              <div class="hero-visual" aria-label="Factory telemetry overview">
+                <div class="plant-map">
+                  <div class="factory-row">
+                    <div class="line-label">Line A</div>
+                    <div class="machine"><strong>CNC-101</strong><span>vibration 1.8 mm/s</span></div>
+                    <div class="machine warning"><strong>PRESS-102</strong><span>temp 83 C</span></div>
+                    <div class="machine"><strong>ROBOT-103</strong><span>power 6.1 kW</span></div>
+                    <div class="machine"><strong>INS-104</strong><span>defects stable</span></div>
+                  </div>
+                  <div class="factory-row">
+                    <div class="line-label">Line B</div>
+                    <div class="machine critical"><strong>CNC-201</strong><span>vibration 4.4 mm/s</span></div>
+                    <div class="machine"><strong>OVEN-202</strong><span>temp 214 C</span></div>
+                    <div class="machine"><strong>CONV-203</strong><span>rpm 183</span></div>
+                    <div class="machine"><strong>INS-204</strong><span>quality normal</span></div>
+                  </div>
+                  <div class="factory-row">
+                    <div class="line-label">Line C</div>
+                    <div class="machine"><strong>PRESS-301</strong><span>pressure 18.1 bar</span></div>
+                    <div class="machine"><strong>ROBOT-302</strong><span>vibration 0.9 mm/s</span></div>
+                    <div class="machine"><strong>OVEN-303</strong><span>power 55.4 kW</span></div>
+                    <div class="machine"><strong>CONV-304</strong><span>throughput 96%</span></div>
+                  </div>
+                </div>
+                <div class="signal-panel">
+                  <div class="signal"><span>Incidents</span><strong>14</strong></div>
+                  <div class="signal"><span>72h risk</span><strong>0.81</strong></div>
+                  <div class="signal"><span>AI traces</span><strong>238</strong></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </header>
+
+        <section id="overview">
+          <div class="section-inner">
+            <div class="section-header">
+              <div class="section-label">Overview</div>
+              <h2>Autonomous operations intelligence for manufacturing plants</h2>
+            </div>
+            <p class="lead">
+              The platform is designed as a real industrial AI system, not a chatbot shell.
+              It continuously ingests plant telemetry, applies anomaly detection, coordinates
+              autonomous Hermes specialists, executes LangGraph workflows with approval gates,
+              and routes all model calls through TrueFoundry for governance and observability.
+            </p>
+            <div class="metric-row">
+              <div class="metric"><span>Microservices</span><strong>12</strong></div>
+              <div class="metric"><span>Frontend pages</span><strong>10</strong></div>
+              <div class="metric"><span>Core agents</span><strong>7</strong></div>
+              <div class="metric"><span>Workflow graphs</span><strong>4</strong></div>
+            </div>
+          </div>
+        </section>
+
+        <section id="architecture">
+          <div class="section-inner">
+            <div class="section-header">
+              <div class="section-label">Core Architecture</div>
+              <h2>Hermes for agency, LangGraph for control, TrueFoundry for infrastructure</h2>
+            </div>
+            <div class="architecture-layers">
+              <div class="layer">
+                <strong>Hermes Agent</strong>
+                <p>
+                  Autonomous intelligence layer for planning, collaboration, tool execution,
+                  operational memory, skill reuse, and persistent learning across Monitoring,
+                  RCA, Predictive Maintenance, Optimization, Reporting, ChatOps, and Supervisor
+                  agents.
+                </p>
+              </div>
+              <div class="layer">
+                <strong>LangGraph</strong>
+                <p>
+                  Deterministic workflow engine for stateful execution. It owns investigation,
+                  maintenance approval, remediation, and incident escalation graphs, including
+                  human approval pauses and resumable operational state.
+                </p>
+              </div>
+              <div class="layer">
+                <strong>TrueFoundry</strong>
+                <p>
+                  Enterprise AI infrastructure layer for AI Gateway routing, multi-model
+                  fallback, semantic caching, model serving, autoscaling, tracing, token
+                  accounting, quotas, rate limits, and auditability.
+                </p>
+              </div>
+            </div>
+            <div class="diagram" style="margin-top: 18px">
+              <div class="flow">
+                <div class="flow-node"><strong>Telemetry stream</strong><span>NATS or HTTP ingestion from factory equipment</span></div>
+                <div class="flow-node"><strong>Monitoring Agent</strong><span>Watches readings and detects sustained deviations</span></div>
+                <div class="flow-node"><strong>Anomaly detection</strong><span>Statistical, EWMA, IQR, isolation forest, LLM severity</span></div>
+                <div class="flow-node"><strong>LangGraph workflow</strong><span>Starts investigation and preserves state</span></div>
+                <div class="flow-node"><strong>Hermes RCA</strong><span>Retrieves similar incidents and reasons over telemetry</span></div>
+                <div class="flow-node"><strong>Recommendation</strong><span>Actions, confidence, escalation, approval gate</span></div>
+                <div class="flow-node"><strong>Dashboard + ChatOps</strong><span>Operator UI, reports, notifications, executive view</span></div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section id="data">
+          <div class="section-inner">
+            <div class="section-header">
+              <div class="section-label">Industrial Data</div>
+              <h2>Telemetry ranges, failure modes, and RCA categories</h2>
+            </div>
+            <p class="lead">
+              ForgeMind AI models machines common in discrete manufacturing plants. Anything
+              sustained outside its operating band for at least 5 seconds deserves investigation.
+            </p>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Type</th>
+                    <th>Temp C</th>
+                    <th>Vibration mm/s</th>
+                    <th>Pressure bar</th>
+                    <th>RPM</th>
+                    <th>Power kW</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr><td>CNC</td><td>55-70</td><td>1.2-2.5</td><td>3.5-5.0</td><td>2200-2600</td><td>14-22</td></tr>
+                  <tr><td>PRESS</td><td>65-80</td><td>2.0-3.2</td><td>16-20</td><td>n/a</td><td>36-48</td></tr>
+                  <tr><td>ROBOT</td><td>42-55</td><td>0.5-1.4</td><td>1.5-2.5</td><td>n/a</td><td>4-9</td></tr>
+                  <tr><td>OVEN</td><td>195-230</td><td>0.1-0.5</td><td>0.9-1.3</td><td>n/a</td><td>48-62</td></tr>
+                  <tr><td>CONVEYOR</td><td>32-45</td><td>0.3-0.9</td><td>0.5-1.0</td><td>150-210</td><td>2.5-4.5</td></tr>
+                  <tr><td>INSPECTION</td><td>35-48</td><td>0.2-0.6</td><td>0.8-1.2</td><td>n/a</td><td>1.5-2.5</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="grid three" style="margin-top: 16px">
+              <div class="card accent-amber">
+                <h3>Common failure modes</h3>
+                <ul>
+                  <li>Vibration spike on CNC/PRESS: bearing wear, tool imbalance, fixture loosening.</li>
+                  <li>Thermal runaway on PRESS/OVEN: cooling-loop fouling, coolant leak, PID drift.</li>
+                  <li>Pressure drop on PRESS/CNC: seal failure, leak, pump cavitation.</li>
+                  <li>Motor stall on CONVEYOR: jam, overload, VFD fault.</li>
+                </ul>
+              </div>
+              <div class="card accent-cyan">
+                <h3>Severity calibration</h3>
+                <p><span class="severity critical">CRITICAL</span> immediate safety risk, line stop, or scrap over $10k/h.</p>
+                <p><span class="severity high">HIGH</span> production at risk this shift; intervene within 30 minutes.</p>
+                <p><span class="severity medium">MEDIUM</span> investigate this shift and monitor closely.</p>
+                <p><span class="severity low">LOW</span> informational or trending condition.</p>
+              </div>
+              <div class="card accent-green">
+                <h3>RCA categories</h3>
+                <p>
+                  MECHANICAL, ELECTRICAL, THERMAL, HYDRAULIC, PROCESS, OPERATOR,
+                  MATERIAL, CONTROL_SYSTEM, UPSTREAM, and EXTERNAL.
+                </p>
+                <p>
+                  RCA outputs must cite machine_id and exact metric evidence, include a confidence
+                  score from 0 to 1, and recommend concrete actions with timeframes.
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section id="agents">
+          <div class="section-inner">
+            <div class="section-header">
+              <div class="section-label">Hermes Agents</div>
+              <h2>Specialists collaborate through shared tools and operational memory</h2>
+            </div>
+            <div class="grid three">
+              <div class="card accent-cyan">
+                <h3>Monitoring Agent</h3>
+                <p>Continuously watches telemetry, identifies anomalies, suppresses low-value noise, and initiates investigations when sustained deviations are detected.</p>
+              </div>
+              <div class="card accent-green">
+                <h3>RCA Agent</h3>
+                <p>Retrieves similar past incidents with pgvector, reads telemetry context, correlates events, and produces structured RCA reports with findings and actions.</p>
+              </div>
+              <div class="card accent-amber">
+                <h3>Predictive Maintenance Agent</h3>
+                <p>Forecasts machine failure risk, estimates maintenance windows, explains degradation drivers, and recommends scheduled interventions.</p>
+              </div>
+              <div class="card">
+                <h3>Production Optimization Agent</h3>
+                <p>Analyzes throughput, defects, downtime, bottlenecks, line balance, and operational efficiency by production line and machine class.</p>
+              </div>
+              <div class="card">
+                <h3>Reporting Agent</h3>
+                <p>Generates shift summaries, executive reports, incident digests, risk narratives, and operational intelligence briefs.</p>
+              </div>
+              <div class="card">
+                <h3>ChatOps Agent</h3>
+                <p>Acts as the operator-facing conversational interface. It answers questions, runs RCA, delegates to the Supervisor, and streams tool activity.</p>
+              </div>
+            </div>
+            <div class="card accent-red" style="margin-top: 16px">
+              <h3>Supervisor Orchestrator</h3>
+              <p>
+                The Supervisor routes user requests and system events to the appropriate specialist.
+                It coordinates multi-agent work, keeps operational context coherent, and uses
+                TrueFoundry-backed models without binding the application to a single provider.
+              </p>
+              <div class="badge-row">
+                <span class="badge">planning</span>
+                <span class="badge">tool execution</span>
+                <span class="badge">task routing</span>
+                <span class="badge">memory reuse</span>
+                <span class="badge">agent collaboration</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section id="workflows">
+          <div class="section-inner">
+            <div class="section-header">
+              <div class="section-label">LangGraph Workflows</div>
+              <h2>Deterministic operational workflows around autonomous reasoning</h2>
+            </div>
+            <div class="grid two">
+              <div class="card accent-cyan">
+                <h3>Investigation graph</h3>
+                <p>Fetches incident context, gathers telemetry, invokes RCA, invokes predictive maintenance, assesses severity, gates approval, and notifies downstream systems.</p>
+              </div>
+              <div class="card accent-amber">
+                <h3>Maintenance approval graph</h3>
+                <p>Builds a maintenance recommendation, checks risk, waits for operator approval for high-impact actions, and emits a trackable workflow run.</p>
+              </div>
+              <div class="card accent-green">
+                <h3>Remediation graph</h3>
+                <p>Prepares remediation steps, validates preconditions, requests approval for sensitive actions, and records execution state for auditability.</p>
+              </div>
+              <div class="card accent-red">
+                <h3>Incident escalation graph</h3>
+                <p>Escalates critical incidents, fans out notifications, preserves trace IDs, and records operator acknowledgements.</p>
+              </div>
+            </div>
+            <div class="code-block" style="margin-top: 16px">
+              <pre>fetch_incident
+  -> fetch_telemetry
+  -> run_rca
+  -> run_pdm
+  -> assess_severity
+  -> approval_gate
+     -> notify
+     -> END
+
+If severity is HIGH or CRITICAL, approval_gate pauses the workflow until an operator approves or rejects the action.</pre>
+            </div>
+          </div>
+        </section>
+
+        <section id="truefoundry">
+          <div class="section-inner">
+            <div class="section-header">
+              <div class="section-label">TrueFoundry Infrastructure</div>
+              <h2>Gateway routing, model serving, autoscaling, and governance</h2>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Tier</th>
+                    <th>Primary model</th>
+                    <th>Fallbacks</th>
+                    <th>Typical usage</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>fast</td>
+                    <td>gpt-4o-mini</td>
+                    <td>Claude Haiku, local Llama 3.1 8B</td>
+                    <td>Severity classification, remediation drafts, Monitoring Agent summaries.</td>
+                  </tr>
+                  <tr>
+                    <td>powerful</td>
+                    <td>Claude Sonnet 4.5</td>
+                    <td>gpt-4o, local Llama 3.1 70B</td>
+                    <td>RCA reasoning, predictive maintenance explanation, reporting, ChatOps.</td>
+                  </tr>
+                  <tr>
+                    <td>fallback</td>
+                    <td>Local Llama 3.1 8B</td>
+                    <td>None</td>
+                    <td>Last-resort inference when external providers are unavailable.</td>
+                  </tr>
+                  <tr>
+                    <td>embedding</td>
+                    <td>text-embedding-3-small</td>
+                    <td>nomic-embed-text</td>
+                    <td>Incident memory ingest and similarity search in pgvector.</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="grid three" style="margin-top: 16px">
+              <div class="card">
+                <h3>AI Gateway</h3>
+                <p>Provides OpenAI-compatible routing, provider abstraction, semantic caching, retries, fallback policies, and per-service quotas.</p>
+              </div>
+              <div class="card">
+                <h3>Model serving</h3>
+                <p>Hosts inference APIs, anomaly services, predictive services, RCA services, and operational intelligence workloads behind managed endpoints.</p>
+              </div>
+              <div class="card">
+                <h3>Autoscaling</h3>
+                <p>Scales agent services, inference services, and RCA pipelines based on CPU, request volume, and latency pressure.</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section id="services">
+          <div class="section-inner">
+            <div class="section-header">
+              <div class="section-label">Microservices</div>
+              <h2>Distributed FastAPI services with Vue, Postgres, Redis, NATS, and pgvector</h2>
+            </div>
+            <div class="service-list">
+              <div class="service"><strong>api-gateway</strong><span>JWT auth, RBAC, rate limiting, reverse proxy, API management.</span></div>
+              <div class="service"><strong>telemetry-simulator</strong><span>Virtual CNC, PRESS, ROBOT, OVEN, CONVEYOR, and INSPECTION machines with injectable anomalies.</span></div>
+              <div class="service"><strong>telemetry-ingestion</strong><span>HTTP ingestion seam for plant gateways, PLC bridges, OPC-UA adapters, and batch telemetry.</span></div>
+              <div class="service"><strong>anomaly-detection</strong><span>Statistical scoring, EWMA, IQR, Isolation Forest, severity classification, incident publishing.</span></div>
+              <div class="service"><strong>workflow-engine</strong><span>LangGraph workflows for investigation, approval, remediation, and escalation.</span></div>
+              <div class="service"><strong>ai-orchestrator</strong><span>Hermes Supervisor and specialist coordination.</span></div>
+              <div class="service"><strong>rca-service</strong><span>Hermes RCA Agent, pgvector memory, structured RCA reports.</span></div>
+              <div class="service"><strong>predictive-maintenance</strong><span>Failure risk forecasts, maintenance windows, degradation narratives.</span></div>
+              <div class="service"><strong>reporting-service</strong><span>Shift summaries, executive reports, operational intelligence digests.</span></div>
+              <div class="service"><strong>chatops-service</strong><span>Natural-language interface, SSE streaming, tool execution traces.</span></div>
+              <div class="service"><strong>notification-service</strong><span>Adaptive suppression, alert fan-out, incident notifications.</span></div>
+              <div class="service"><strong>frontend</strong><span>Vue 3 and Tailwind dashboard with ten enterprise operations pages.</span></div>
+            </div>
+          </div>
+        </section>
+
+        <section id="features">
+          <div class="section-inner">
+            <div class="section-header">
+              <div class="section-label">Advanced Features</div>
+              <h2>Industrial AI capabilities beyond a basic RAG workflow</h2>
+            </div>
+            <div class="grid four">
+              <div class="card"><h3>Semantic incident search</h3><p>Vectorized incident memory lets RCA find operationally similar past events, not just keyword matches.</p></div>
+              <div class="card"><h3>Adaptive alert suppression</h3><p>Notification rules reduce alert fatigue while preserving high-severity and correlated signals.</p></div>
+              <div class="card"><h3>Incident replay</h3><p>Historical anomaly waves can replay through telemetry, detection, workflow, RCA, reporting, and ChatOps.</p></div>
+              <div class="card"><h3>Confidence scoring</h3><p>RCA and predictive maintenance outputs quantify uncertainty and expose evidence behind decisions.</p></div>
+              <div class="card"><h3>Predictive maintenance</h3><p>Failure risk over 24h and 72h windows drives recommended maintenance timing.</p></div>
+              <div class="card"><h3>Bottleneck analysis</h3><p>Production analytics correlates downtime, throughput, defects, and machine health by line.</p></div>
+              <div class="card"><h3>Semantic caching</h3><p>TrueFoundry-backed caching lowers repeated reasoning cost for similar operational questions.</p></div>
+              <div class="card"><h3>Agent activity tracing</h3><p>Agent runs and workflow nodes surface trace IDs, token usage, cost, latency, and model choices.</p></div>
+            </div>
+          </div>
+        </section>
+
+        <section id="product">
+          <div class="section-inner">
+            <div class="section-header">
+              <div class="section-label">Product UI</div>
+              <h2>Enterprise dashboard modeled for operators, engineers, and executives</h2>
+            </div>
+            <div class="grid two">
+              <div class="card accent-cyan">
+                <h3>Operational pages</h3>
+                <ol>
+                  <li>Operations Dashboard</li>
+                  <li>Machine Health</li>
+                  <li>Incident Explorer</li>
+                  <li>Predictive Maintenance</li>
+                  <li>Production Analytics</li>
+                </ol>
+              </div>
+              <div class="card accent-green">
+                <h3>AI intelligence pages</h3>
+                <ol>
+                  <li>AI RCA Reports</li>
+                  <li>ChatOps Console</li>
+                  <li>Executive Reports</li>
+                  <li>AI Agent Activity</li>
+                  <li>Settings</li>
+                </ol>
+              </div>
+            </div>
+            <p style="margin-top: 16px">
+              The interface should feel closer to Datadog, Grafana, New Relic, Linear, and
+              Vercel than a demo chatbot. The first screen should expose live operational state,
+              not marketing copy.
+            </p>
+          </div>
+        </section>
+
+        <section id="security">
+          <div class="section-inner">
+            <div class="section-header">
+              <div class="section-label">Security and Governance</div>
+              <h2>Controls for real enterprise deployment</h2>
+            </div>
+            <div class="grid three">
+              <div class="card"><h3>Identity</h3><p>JWT authentication, RBAC roles, identity propagation through the API gateway, and per-role UI behavior.</p></div>
+              <div class="card"><h3>Approval workflows</h3><p>High-risk maintenance and remediation actions pause at human approval gates before execution.</p></div>
+              <div class="card"><h3>API governance</h3><p>Rate limits, quotas, API management, audit logs, service boundaries, and secure secrets via TrueFoundry.</p></div>
+            </div>
+          </div>
+        </section>
+
+        <section id="observability">
+          <div class="section-inner">
+            <div class="section-header">
+              <div class="section-label">Observability</div>
+              <h2>Application, workflow, and model telemetry in one operating picture</h2>
+            </div>
+            <div class="grid three">
+              <div class="card accent-cyan">
+                <h3>Prometheus metrics</h3>
+                <p>Every FastAPI service exposes health, readiness, and metrics endpoints for platform-level monitoring.</p>
+              </div>
+              <div class="card accent-green">
+                <h3>OpenTelemetry traces</h3>
+                <p>Trace IDs connect frontend activity, API requests, workflow nodes, Hermes agent runs, and TrueFoundry model calls.</p>
+              </div>
+              <div class="card accent-amber">
+                <h3>TrueFoundry analytics</h3>
+                <p>Tracks token usage, inference latency, retries, fallback rate, cache hit rate, model health, and cost per agent.</p>
+              </div>
+            </div>
+            <div class="code-block" style="margin-top: 16px">
+              <pre>GET /healthz
+GET /readyz
+GET /metrics
+
+Custom metrics:
+forgemind_anomalies_total{machine,severity}
+forgemind_llm_tokens_total{service,tier,model,kind}
+forgemind_llm_cost_usd{service,tier,model}</pre>
+            </div>
+          </div>
+        </section>
+
+        <section id="api">
+          <div class="section-inner">
+            <div class="section-header">
+              <div class="section-label">API Surface</div>
+              <h2>Gateway-routed endpoints for telemetry, agents, workflows, and reports</h2>
+            </div>
+            <div class="grid two">
+              <div class="code-block">
+                <pre>POST /auth/login
+GET  /auth/me
+GET  /machines
+GET  /snapshot
+POST /inject
+POST /replay-historical
+GET  /incidents
+POST /incidents/score</pre>
+              </div>
+              <div class="code-block">
+                <pre>POST /rca/run
+GET  /rca/reports
+GET  /predictions
+POST /predictions/explain/{machine_id}
+POST /workflows/{name}/run
+POST /agents/run
+POST /chat/stream
+POST /reports/generate</pre>
+              </div>
+            </div>
+            <p style="margin-top: 16px">
+              In development, routes are exposed through the API gateway at
+              <code>http://localhost:8080/api/v1/...</code>. In production, TrueFoundry ingress
+              exposes the same API shape behind the configured workspace domain.
+            </p>
+          </div>
+        </section>
+
+        <section id="deployment">
+          <div class="section-inner">
+            <div class="section-header">
+              <div class="section-label">Deployment</div>
+              <h2>Local development, Kubernetes, and TrueFoundry production paths</h2>
+            </div>
+            <div class="grid three">
+              <div class="card">
+                <h3>Docker Compose</h3>
+                <p>Starts all services, frontend, Postgres with pgvector, Redis, NATS, Prometheus, and Grafana for local development.</p>
+                <div class="code-block"><pre>cp .env.example .env
+docker compose up --build</pre></div>
+              </div>
+              <div class="card">
+                <h3>Kubernetes and Helm</h3>
+                <p>Deploys services, config, ingress, HPA-ready workloads, and optional infrastructure using the Helm chart.</p>
+                <div class="code-block"><pre>helm upgrade --install forgemind \
+  ./infra/helm/factorymind \
+  --namespace forgemind</pre></div>
+              </div>
+              <div class="card">
+                <h3>TrueFoundry</h3>
+                <p>Applies workspace config, AI Gateway routing, secrets, autoscaling service specs, tracing, and model governance.</p>
+                <div class="code-block"><pre>export TFY_WORKSPACE=forgemind-prod
+./infra/truefoundry/deploy.sh</pre></div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section id="demo">
+          <div class="section-inner">
+            <div class="section-header">
+              <div class="section-label">Demo Flow</div>
+              <h2>End-to-end operational scenario</h2>
+            </div>
+            <div class="timeline">
+              <div class="timeline-item"><strong>Simulate factory telemetry</strong><span>Virtual production lines emit machine readings at industrial cadence.</span></div>
+              <div class="timeline-item"><strong>Inject anomaly</strong><span>A vibration spike, thermal runaway, pressure drop, motor stall, quality spike, or power surge is introduced.</span></div>
+              <div class="timeline-item"><strong>Detect incident</strong><span>The Monitoring Agent and anomaly detector classify severity and publish an incident.</span></div>
+              <div class="timeline-item"><strong>Launch workflow</strong><span>LangGraph starts the investigation graph and records node-level execution state.</span></div>
+              <div class="timeline-item"><strong>Run RCA and PdM</strong><span>Hermes RCA and Predictive Maintenance agents retrieve context and forecast operational risk.</span></div>
+              <div class="timeline-item"><strong>Generate intelligence</strong><span>Recommendations, executive summaries, notifications, ChatOps responses, and dashboard updates are generated.</span></div>
+              <div class="timeline-item"><strong>Visualize recovery</strong><span>The dashboard shows incident lifecycle, agent traces, remediation state, and machine health recovery.</span></div>
+            </div>
+          </div>
+        </section>
+
+        <div class="footer-note">
+          ForgeMind AI documentation page. Source artifacts live in README.md, docs/API.md,
+          docs/ARCHITECTURE.md, docs/DEPLOYMENT.md, services/, frontend/, and infra/.
+        </div>
+      </main>
+    </div>
+
+    <script>
+      const links = [...document.querySelectorAll(".toc-nav a")];
+      const sections = links
+        .map((link) => document.querySelector(link.getAttribute("href")))
+        .filter(Boolean);
+
+      const observer = new IntersectionObserver(
+        (entries) => {
+          const visible = entries
+            .filter((entry) => entry.isIntersecting)
+            .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
+
+          if (!visible) return;
+
+          links.forEach((link) => {
+            link.classList.toggle(
+              "active",
+              link.getAttribute("href") === `#${visible.target.id}`
+            );
+          });
+        },
+        {
+          rootMargin: "-20% 0px -65% 0px",
+          threshold: [0.08, 0.18, 0.3, 0.45],
+        }
+      );
+
+      sections.forEach((section) => observer.observe(section));
+    </script>
+  </body>
+</html>

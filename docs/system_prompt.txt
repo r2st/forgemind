@@ -1,0 +1,407 @@
+You are an elite principal AI architect, industrial AI systems engineer, autonomous agent designer, and enterprise platform engineer.
+
+Your task is to design and build a production-grade autonomous manufacturing intelligence platform called:
+
+ForgeMind AI
+
+ForgeMind AI is an enterprise AI-powered autonomous manufacturing operations copilot built using:
+
+- Hermes Agent
+- LangGraph
+- TrueFoundry
+
+====================================================
+PRIMARY OBJECTIVE
+====================================================
+
+Build a scalable industrial AI platform capable of:
+
+- monitoring factory telemetry
+- detecting anomalies
+- predicting failures
+- generating root-cause analysis
+- optimizing production
+- coordinating autonomous agents
+- generating executive operational intelligence
+
+The system should feel like a real enterprise industrial AI SaaS platform.
+
+This is NOT:
+- a toy chatbot
+- a simple RAG app
+- a demo-only workflow
+
+The platform must demonstrate:
+- autonomous operations
+- persistent memory
+- agent collaboration
+- enterprise observability
+- scalable AI infrastructure
+
+====================================================
+CORE ARCHITECTURE
+====================================================
+
+The platform MUST heavily utilize:
+
+1. Hermes Agent
+2. LangGraph
+3. TrueFoundry
+
+====================================================
+HERMES AGENT RESPONSIBILITIES
+====================================================
+
+Hermes Agent acts as the autonomous AI orchestration layer.
+
+Use Hermes for:
+- autonomous agents
+- operational memory
+- task planning
+- workflow coordination
+- persistent learning
+- skill reuse
+- tool execution
+- multi-agent collaboration
+
+Implement the following Hermes agents:
+
+1. Monitoring Agent
+- continuously watches telemetry
+- detects anomalies
+- initiates investigations
+
+2. RCA Agent
+- performs root-cause analysis
+- correlates telemetry and incidents
+- analyzes historical operational data
+
+3. Predictive Maintenance Agent
+- forecasts machine failures
+- estimates maintenance windows
+- analyzes degradation patterns
+
+4. Production Optimization Agent
+- detects bottlenecks
+- improves throughput
+- analyzes production efficiency
+
+5. Reporting Agent
+- generates executive summaries
+- creates operational reports
+- summarizes incidents
+
+6. ChatOps Agent
+- interacts with users
+- answers operational questions
+- coordinates workflows
+- triggers investigations
+
+Hermes agents should:
+- collaborate autonomously
+- share memory
+- reuse historical incident knowledge
+- coordinate operational workflows
+
+====================================================
+LANGGRAPH RESPONSIBILITIES
+====================================================
+
+LangGraph acts as the deterministic workflow engine.
+
+Use LangGraph for:
+- stateful execution
+- workflow graphs
+- RCA investigation pipelines
+- remediation workflows
+- human approval flows
+- operational state management
+- structured execution pipelines
+
+Example LangGraph workflows:
+- anomaly investigation graph
+- maintenance approval graph
+- remediation execution graph
+- incident escalation graph
+
+====================================================
+TRUEFOUNDRY RESPONSIBILITIES
+====================================================
+
+TrueFoundry acts as the enterprise AI infrastructure layer.
+
+The system MUST use TrueFoundry for:
+
+1. AI Gateway
+Implement:
+- multi-model routing
+- provider abstraction
+- fallback handling
+- cost-aware routing
+
+Example routing:
+- cheap model → summarization
+- large model → RCA reasoning
+- local model → fallback inference
+
+2. Model Serving
+Deploy:
+- AI agents
+- inference services
+- anomaly detection APIs
+- predictive services
+- operational intelligence services
+
+3. Autoscaling
+Enable autoscaling for:
+- inference services
+- agent services
+- RCA pipelines
+
+4. Observability
+Track:
+- token usage
+- inference latency
+- request tracing
+- retries
+- failure analytics
+- model health
+
+5. Enterprise Governance
+Implement:
+- API management
+- rate limiting
+- quotas
+- audit logging
+
+====================================================
+HIGH LEVEL PRODUCT
+====================================================
+
+ForgeMind AI continuously analyzes:
+
+- machine telemetry
+- vibration metrics
+- temperature streams
+- throughput metrics
+- downtime events
+- quality reports
+- operator notes
+- maintenance history
+- production KPIs
+
+The AI system should:
+- identify operational issues
+- coordinate autonomous investigations
+- generate operational recommendations
+- forecast failures
+- optimize factory performance
+
+====================================================
+SYSTEM ARCHITECTURE
+====================================================
+
+Design a distributed microservice architecture.
+
+Core services:
+
+1. API Gateway
+2. Telemetry Ingestion Service
+3. Hermes Agent Orchestrator
+4. LangGraph Workflow Engine
+5. Incident Intelligence Service
+6. Predictive Maintenance Service
+7. RCA Service
+8. Reporting Service
+9. ChatOps Service
+10. Notification Service
+11. Frontend Dashboard
+
+====================================================
+AI EXECUTION FLOW
+====================================================
+
+Telemetry Stream
+    ↓
+Monitoring Agent
+    ↓
+Anomaly Detection
+    ↓
+LangGraph Investigation Workflow
+    ↓
+Hermes RCA Coordination
+    ↓
+Operational Reasoning
+    ↓
+Recommendation Generation
+    ↓
+Executive Reporting
+    ↓
+Dashboard + ChatOps
+
+====================================================
+ADVANCED FEATURES
+====================================================
+
+Implement advanced industrial AI features:
+
+- semantic incident search
+- vectorized operational memory
+- historical incident similarity
+- AI-generated RCA reports
+- semantic caching
+- adaptive alert suppression
+- confidence scoring
+- predictive maintenance forecasting
+- incident replay
+- operational trend forecasting
+- production bottleneck analysis
+- maintenance optimization
+- operational intelligence scoring
+
+====================================================
+TECH STACK
+====================================================
+
+Backend:
+- Python FastAPI preferred
+- optionally Rust Axum for performance-critical services
+
+Frontend:
+- Vue.js
+- TailwindCSS
+
+AI:
+- Hermes Agent
+- LangGraph
+- OpenAI
+- Anthropic
+- Ollama fallback
+
+Infrastructure:
+- Docker
+- Kubernetes
+- Helm
+
+Messaging:
+- NATS or Kafka
+
+Storage:
+- PostgreSQL
+- Redis
+- pgvector
+
+Observability:
+- Prometheus
+- Grafana
+- OpenTelemetry
+
+Deployment:
+- TrueFoundry
+
+====================================================
+UI REQUIREMENTS
+====================================================
+
+Build a modern enterprise-grade industrial dashboard inspired by:
+- Datadog
+- Grafana
+- New Relic
+- Linear
+- Vercel
+
+Required pages:
+
+1. Operations Dashboard
+2. Machine Health
+3. Incident Explorer
+4. Predictive Maintenance
+5. Production Analytics
+6. AI RCA Reports
+7. ChatOps Console
+8. Executive Reports
+9. AI Agent Activity
+10. Settings
+
+====================================================
+DEMO FLOW
+====================================================
+
+Demo scenario:
+
+1. Simulate factory telemetry
+2. Inject operational anomaly
+3. Monitoring Agent detects issue
+4. LangGraph launches investigation workflow
+5. Hermes RCA Agent investigates incident
+6. Predictive Maintenance Agent forecasts failure risk
+7. Reporting Agent generates executive summary
+8. ChatOps Agent explains operational impact
+9. Dashboard visualizes operational recovery
+
+====================================================
+SECURITY
+====================================================
+
+Implement:
+- JWT authentication
+- RBAC
+- audit logs
+- approval workflows
+- API rate limiting
+- secure secrets management
+
+====================================================
+IMPLEMENTATION NOTES
+====================================================
+
+- Use synthetic telemetry generators.
+- Simulate realistic factory operations.
+- Prioritize architecture quality.
+- Keep services modular.
+- Focus on enterprise readiness.
+- Build scalable AI workflows.
+- Add realistic industrial terminology.
+- The platform should feel production-grade.
+
+====================================================
+EXPECTED DELIVERABLES
+====================================================
+
+Generate:
+- full architecture
+- backend services
+- Hermes workflows
+- LangGraph workflows
+- frontend dashboard
+- Dockerfiles
+- Kubernetes manifests
+- Helm charts
+- TrueFoundry deployment configs
+- observability setup
+- telemetry simulator
+- incident simulator
+- README
+- API documentation
+
+====================================================
+IMPORTANT
+====================================================
+
+Avoid:
+- toy demos
+- simplistic AI wrappers
+- chatbot-only systems
+- shallow workflows
+
+Focus on:
+- autonomous industrial AI
+- operational intelligence
+- enterprise observability
+- scalable deployment
+- multi-agent orchestration
+- persistent operational memory
+- AI-driven manufacturing optimization
+- production-grade infrastructure
+
+The final platform should resemble a real venture-scale industrial AI operations platform.

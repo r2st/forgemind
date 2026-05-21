@@ -1,0 +1,88 @@
+# ForgeMind microservices. Each gets a Deployment + Service + HPA.
+# Container images come from the helm `image.registry` value.
+
+{{- $services := list
+  "telemetry-simulator"
+  "telemetry-ingestion"
+  "anomaly-detection"
+  "rca-service"
+  "predictive-maintenance"
+  "ai-orchestrator"
+  "workflow-engine"
+  "chatops-service"
+  "reporting-service"
+  "notification-service"
+  "api-gateway"
+-}}
+
+# NOTE: pure-K8s version below (no templating). For Helm see infra/helm/.
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata: { name: telemetry-simulator, namespace: forgemind }
+spec:
+  replicas: 1
+  selector: { matchLabels: { app: telemetry-simulator } }
+  template:
+    metadata: { labels: { app: telemetry-simulator } }
+    spec:
+      containers:
+        - name: app
+          image: ghcr.io/forgemind/telemetry-simulator:latest
+          ports: [{ containerPort: 8000 }]
+          envFrom:
+            - configMapRef: { name: forgemind-config }
+            - secretRef: { name: forgemind-secrets }
+          readinessProbe: { httpGet: { path: /readyz, port: 8000 }, periodSeconds: 5 }
+          livenessProbe:  { httpGet: { path: /healthz, port: 8000 }, periodSeconds: 10 }
+          resources: { requests: { cpu: "100m", memory: "256Mi" }, limits: { cpu: "500m", memory: "512Mi" } }
+---
+apiVersion: v1
+kind: Service
+metadata: { name: telemetry-simulator, namespace: forgemind }
+spec:
+  selector: { app: telemetry-simulator }
+  ports: [{ port: 8000, targetPort: 8000 }]
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata: { name: anomaly-detection, namespace: forgemind }
+spec:
+  replicas: 2
+  selector: { matchLabels: { app: anomaly-detection } }
+  template:
+    metadata: { labels: { app: anomaly-detection } }
+    spec:
+      containers:
+        - name: app
+          image: ghcr.io/forgemind/anomaly-detection:latest
+          ports: [{ containerPort: 8000 }]
+          envFrom:
+            - configMapRef: { name: forgemind-config }
+            - secretRef:    { name: forgemind-secrets }
+          readinessProbe: { httpGet: { path: /readyz, port: 8000 } }
+          resources: { requests: { cpu: "300m", memory: "512Mi" }, limits: { cpu: "1500m", memory: "1Gi" } }
+---
+apiVersion: v1
+kind: Service
+metadata: { name: anomaly-detection, namespace: forgemind }
+spec:
+  selector: { app: anomaly-detection }
+  ports: [{ port: 8000 }]
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata: { name: anomaly-detection-hpa, namespace: forgemind }
+spec:
+  scaleTargetRef: { apiVersion: apps/v1, kind: Deployment, name: anomaly-detection }
+  minReplicas: 2
+  maxReplicas: 10
+  metrics:
+    - type: Resource
+      resource: { name: cpu, target: { type: Utilization, averageUtilization: 70 } }
+---
+# The remaining services (rca, pdm, orchestrator, workflow-engine,
+# chatops, reporting, notification, api-gateway, telemetry-ingestion)
+# follow the same shape. The Helm chart in ../helm/ renders them all
+# from a single template — prefer that path for real deploys.

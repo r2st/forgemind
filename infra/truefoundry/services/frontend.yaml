@@ -1,0 +1,27 @@
+name: frontend
+type: service
+workspace_fqn: ${TFY_WORKSPACE}
+
+image:
+  type: build
+  build_source: { type: local, project_root_path: ../../../ }
+  build_spec:   { type: dockerfile, dockerfile_path: frontend/Dockerfile }
+
+ports:
+  - port: 80
+    host: forgemind-${TFY_WORKSPACE}.${TFY_DOMAIN}
+    expose: true
+    protocol: TCP
+
+resources:
+  cpu_request: 0.05
+  cpu_limit: 0.5
+  memory_request: 64
+  memory_limit: 128
+
+replicas: 2
+autoscaling:
+  min_replicas: 2
+  max_replicas: 4
+  metrics:
+    - { type: cpu, target: 70 }

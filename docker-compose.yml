@@ -1,0 +1,190 @@
+# ----------------------------------------------------------------------
+# ForgeMind AI — local end-to-end stack.
+# Brings up:
+#   postgres (+pgvector), redis, nats, prometheus, grafana
+#   10 backend services + frontend
+#
+# Quickstart:
+#   cp .env.example .env  # then set TFY_GATEWAY_API_KEY
+#   docker compose up --build
+#
+# Frontend: http://localhost:5173
+# API:      http://localhost:8080  (api-gateway)
+# Grafana:  http://localhost:3000  (admin/admin)
+# Prom:     http://localhost:9090
+# NATS:     nats://localhost:4222
+# ----------------------------------------------------------------------
+
+x-svc-env: &svc_env
+  ENVIRONMENT: ${ENVIRONMENT:-dev}
+  LOG_LEVEL: ${LOG_LEVEL:-INFO}
+  POSTGRES_DSN: postgresql+asyncpg://forgemind:forgemind@postgres:5432/forgemind
+  REDIS_URL: redis://redis:6379/0
+  NATS_URL: nats://nats:4222
+  TELEMETRY_SUBJECT: forgemind.telemetry
+  INCIDENTS_SUBJECT: forgemind.incidents
+  TFY_GATEWAY_BASE_URL: ${TFY_GATEWAY_BASE_URL:-https://llm-gateway.truefoundry.com}
+  TFY_GATEWAY_API_KEY: ${TFY_GATEWAY_API_KEY:-}
+  TFY_WORKSPACE: ${TFY_WORKSPACE:-forgemind}
+  TFY_MODEL_FAST: ${TFY_MODEL_FAST:-openai-main/gpt-4o-mini}
+  TFY_MODEL_POWERFUL: ${TFY_MODEL_POWERFUL:-anthropic-main/claude-sonnet-4-5}
+  TFY_MODEL_EMBEDDING: ${TFY_MODEL_EMBEDDING:-openai-main/text-embedding-3-small}
+  TFY_MODEL_FALLBACK: ${TFY_MODEL_FALLBACK:-ollama-local/llama3.1:8b}
+  JWT_SECRET: ${JWT_SECRET:-dev-secret-change-me}
+
+services:
+  # ----------------- Infra ---------------------------------------------
+  postgres:
+    image: ankane/pgvector:v0.5.1
+    environment:
+      POSTGRES_USER: forgemind
+      POSTGRES_PASSWORD: forgemind
+      POSTGRES_DB: forgemind
+    ports: ["5432:5432"]
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U forgemind"]
+      interval: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    ports: ["6379:6379"]
+
+  nats:
+    image: nats:2.10-alpine
+    command: ["-js", "-m", "8222"]
+    ports: ["4222:4222", "8222:8222"]
+
+  # ----------------- Backend services ----------------------------------
+  telemetry-simulator:
+    build:
+      context: .
+      dockerfile: services/telemetry-simulator/Dockerfile
+    environment: { <<: *svc_env, SERVICE_NAME: telemetry-simulator }
+    depends_on: { nats: { condition: service_started } }
+    ports: ["8001:8000"]
+
+  telemetry-ingestion:
+    build:
+      context: .
+      dockerfile: services/telemetry-ingestion/Dockerfile
+    environment: { <<: *svc_env, SERVICE_NAME: telemetry-ingestion }
+    depends_on: { nats: { condition: service_started } }
+    ports: ["8002:8000"]
+
+  anomaly-detection:
+    build:
+      context: .
+      dockerfile: services/anomaly-detection/Dockerfile
+    environment: { <<: *svc_env, SERVICE_NAME: anomaly-detection }
+    depends_on:
+      postgres: { condition: service_healthy }
+      nats: { condition: service_started }
+    ports: ["8003:8000"]
+
+  rca-service:
+    build:
+      context: .
+      dockerfile: services/rca-service/Dockerfile
+    environment: { <<: *svc_env, SERVICE_NAME: rca-service }
+    depends_on:
+      postgres: { condition: service_healthy }
+    ports: ["8004:8000"]
+
+  predictive-maintenance:
+    build:
+      context: .
+      dockerfile: services/predictive-maintenance/Dockerfile
+    environment: { <<: *svc_env, SERVICE_NAME: predictive-maintenance }
+    depends_on: [anomaly-detection, telemetry-simulator]
+    ports: ["8005:8000"]
+
+  ai-orchestrator:
+    build:
+      context: .
+      dockerfile: services/ai-orchestrator/Dockerfile
+    environment: { <<: *svc_env, SERVICE_NAME: ai-orchestrator }
+    depends_on: [rca-service, anomaly-detection, telemetry-simulator]
+    ports: ["8006:8000"]
+
+  workflow-engine:
+    build:
+      context: .
+      dockerfile: services/workflow-engine/Dockerfile
+    environment: { <<: *svc_env, SERVICE_NAME: workflow-engine }
+    depends_on: [rca-service, predictive-maintenance, anomaly-detection]
+    ports: ["8007:8000"]
+
+  chatops-service:
+    build:
+      context: .
+      dockerfile: services/chatops-service/Dockerfile
+    environment: { <<: *svc_env, SERVICE_NAME: chatops-service }
+    depends_on: [ai-orchestrator]
+    ports: ["8008:8000"]
+
+  reporting-service:
+    build:
+      context: .
+      dockerfile: services/reporting-service/Dockerfile
+    environment: { <<: *svc_env, SERVICE_NAME: reporting-service }
+    depends_on:
+      postgres: { condition: service_healthy }
+      ai-orchestrator: { condition: service_started }
+    ports: ["8009:8000"]
+
+  notification-service:
+    build:
+      context: .
+      dockerfile: services/notification-service/Dockerfile
+    environment: { <<: *svc_env, SERVICE_NAME: notification-service }
+    depends_on: [nats]
+    ports: ["8010:8000"]
+
+  api-gateway:
+    build:
+      context: .
+      dockerfile: services/api-gateway/Dockerfile
+    environment: { <<: *svc_env, SERVICE_NAME: api-gateway }
+    depends_on:
+      - anomaly-detection
+      - rca-service
+      - ai-orchestrator
+      - workflow-engine
+      - chatops-service
+      - reporting-service
+      - predictive-maintenance
+      - notification-service
+      - telemetry-simulator
+    ports: ["8080:8000"]
+
+  # ----------------- Frontend ------------------------------------------
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+    depends_on: [api-gateway]
+    ports: ["5173:80"]
+
+  # ----------------- Observability -------------------------------------
+  prometheus:
+    image: prom/prometheus:v2.51.0
+    volumes:
+      - ./infra/observability/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    ports: ["9090:9090"]
+
+  grafana:
+    image: grafana/grafana:10.4.1
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin
+    volumes:
+      - ./infra/observability/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./infra/observability/grafana/dashboards:/var/lib/grafana/dashboards:ro
+    ports: ["3000:3000"]
+    depends_on: [prometheus]
+
+volumes:
+  pgdata: {}
