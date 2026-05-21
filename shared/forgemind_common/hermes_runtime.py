@@ -7,12 +7,11 @@ This is the keystone integration between the runtime layers:
     creation, planning.
 
   * **LLM providers** supply the OpenAI-compatible inference substrate.
-    TrueFoundry is supported for gateway routing and observability, but
-    agents can also use direct OpenAI or another compatible endpoint.
+    Each agent can use a direct provider endpoint, a private gateway, or
+    any compatible API configured from the admin panel.
 
 We pass the resolved provider as Hermes's `base_url` + `api_key`, so each
-agent can run through TrueFoundry, direct OpenAI, or a custom compatible
-endpoint.
+agent can run through the configured compatible endpoint.
 
 If the `hermes-agent` package isn't installed (e.g., during unit tests
 or a thin deploy) we degrade gracefully to a `LiteAgent` that uses the
@@ -34,7 +33,7 @@ from datetime import datetime, timezone
 from typing import Any
 
 from .config import get_settings
-from .tfy_gateway import GatewayError, ModelTier, get_gateway
+from .llm_gateway import GatewayError, ModelTier, get_gateway
 
 log = logging.getLogger(__name__)
 
@@ -70,7 +69,7 @@ class AgentActivity:
     tokens_in: int = 0
     tokens_out: int = 0
     cost_usd: float = 0.0
-    tfy_trace_id: str = ""
+    trace_id: str = ""
     model_used: str = ""
     tier: str = ""
 
@@ -89,7 +88,7 @@ class AgentActivity:
             "tokens_in": self.tokens_in,
             "tokens_out": self.tokens_out,
             "cost_usd": round(self.cost_usd, 6),
-            "tfy_trace_id": self.tfy_trace_id,
+            "trace_id": self.trace_id,
             "model_used": self.model_used,
             "tier": self.tier,
         }
@@ -326,7 +325,7 @@ class HermesAgentRuntime:
         history: list[dict[str, Any]],
         activity: AgentActivity,
     ) -> None:
-        """Fallback agent loop using TrueFoundryGateway directly.
+        """Fallback agent loop using LLMGateway directly.
 
         Used when the Hermes package isn't installed. Implements a basic
         tool-calling ReAct loop so behavior is comparable.
@@ -353,7 +352,7 @@ class HermesAgentRuntime:
             activity.tokens_in += resp.usage.prompt_tokens
             activity.tokens_out += resp.usage.completion_tokens
             activity.cost_usd += resp.usage.cost_usd
-            activity.tfy_trace_id = resp.usage.trace_id or activity.tfy_trace_id
+            activity.trace_id = resp.usage.trace_id or activity.trace_id
             activity.model_used = resp.usage.model
 
             if not resp.tool_calls:

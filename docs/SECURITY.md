@@ -25,14 +25,14 @@ Per-IP token bucket at the API gateway: 300 req / 60 s window. Returns `429 Too 
 
 Never in container images. Sources, in order of preference:
 
-1. **TrueFoundry secrets** — `tfy-secret://forgemind/<name>`, mounted as env at runtime.
-2. **Kubernetes secrets** — mounted via `secretRef` in the Helm chart.
+1. **Kubernetes secrets** — mounted via `secretRef` in the Helm chart.
+2. **Admin runtime config** — shared JSON volume for per-agent API keys, file mode `0600`.
 3. **Dev only** — `.env` file at the repo root (gitignored).
 
 ## Audit
 
-- TrueFoundry AI Gateway logs every prompt + completion (configurable per workspace) with trace IDs.
-- Each FastAPI service emits structured JSON logs to stdout — TrueFoundry / Loki / Datadog can pick them up.
+- The configured LLM API or private gateway may emit trace/request IDs.
+- Each FastAPI service emits structured JSON logs to stdout so Loki, Datadog, or platform log collectors can pick them up.
 - The `forgemind_llm_tokens_total` and `forgemind_llm_cost_usd` Prom counters are per-service / per-tier / per-model for chargeback.
 
 ## Approval workflows
@@ -41,4 +41,6 @@ The LangGraph `investigation` and `maintenance_approval` graphs include an `appr
 
 ## PII
 
-Off by default. TrueFoundry AI Gateway supports PII redaction (`defaults.pii.redact: true` in `routing.yaml`). Turn on per-workspace if you carry operator notes that may include personal data.
+PII redaction depends on the configured LLM gateway. If operator notes may carry
+personal data, enable redaction at your gateway boundary before forwarding
+prompts to an external model provider.

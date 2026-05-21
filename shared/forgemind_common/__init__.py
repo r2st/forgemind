@@ -2,7 +2,7 @@
 
 from .config import Settings, get_settings
 from .logging import get_logger, setup_logging
-from .tfy_gateway import TrueFoundryGateway, ModelTier, get_gateway
+from .llm_gateway import LLMGateway, ModelTier, get_gateway
 from .schemas import (
     TelemetryReading,
     Incident,
@@ -23,7 +23,6 @@ from .hermes_runtime import (
     new_runtime,
     HERMES_AVAILABLE,
 )
-from .mcp_gateway import TrueFoundryMCPGateway, MCPServerInfo, get_mcp_gateway
 from .runtime_config import (
     KNOWN_AGENTS,
     config_for_admin,
@@ -41,7 +40,7 @@ __all__ = [
     "get_settings",
     "get_logger",
     "setup_logging",
-    "TrueFoundryGateway",
+    "LLMGateway",
     "ModelTier",
     "get_gateway",
     "TelemetryReading",
@@ -60,9 +59,6 @@ __all__ = [
     "get_activity_ledger",
     "new_runtime",
     "HERMES_AVAILABLE",
-    "TrueFoundryMCPGateway",
-    "MCPServerInfo",
-    "get_mcp_gateway",
     "KNOWN_AGENTS",
     "config_for_admin",
     "load_runtime_config",

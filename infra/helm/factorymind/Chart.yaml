@@ -4,6 +4,6 @@ description: ForgeMind AI — Autonomous Manufacturing Operations Copilot
 type: application
 version: 0.1.0
 appVersion: "0.1.0"
-keywords: [manufacturing, ai, hermes, langgraph, truefoundry, observability]
+keywords: [manufacturing, ai, hermes, langgraph, observability]
 maintainers:
   - name: ForgeMind Engineering

@@ -1,17 +1,15 @@
-"""TrueFoundry AI Gateway client.
+"""Generic OpenAI-compatible LLM gateway client.
 
-The TrueFoundry AI Gateway is the single LLM ingress for every
-ForgeMind service. It is OpenAI-API-compatible, supports multi-provider
-routing, cost-aware fallback, semantic caching, observability, and PII
-redaction.
+ForgeMind routes agent inference through a configurable OpenAI-compatible
+HTTP endpoint. The admin panel can set the base URL, API key, model, and
+enabled state globally or per agent without rebuilding containers.
 
 This client abstracts:
 
   * Tier-based model selection (fast / powerful / fallback / embedding).
   * Automatic fallback when the primary tier errors or rate-limits.
-  * Token + cost accounting per call (forwarded to the gateway's
-    observability layer; we just surface the headers).
-  * Tracing via OpenTelemetry headers (`x-tfy-trace-id`).
+  * Token accounting from OpenAI-compatible usage blocks.
+  * Optional trace/cost metadata from generic response headers.
 
 All services should import `get_gateway()` rather than instantiating
 their own OpenAI clients.
@@ -36,7 +34,7 @@ logger = logging.getLogger(__name__)
 
 
 class ModelTier(str, Enum):
-    """Logical model tiers routed by the TrueFoundry AI Gateway."""
+    """Logical model tiers mapped to configured model names."""
 
     FAST = "fast"            # summarization, classification, cheap tasks
     POWERFUL = "powerful"    # RCA, multi-step reasoning, executive reports
@@ -66,13 +64,8 @@ class GatewayResponse:
     raw: dict[str, Any] = field(default_factory=dict)
 
 
-class TrueFoundryGateway:
-    """Thin async client over TrueFoundry or any OpenAI-compatible gateway.
-
-    TrueFoundry remains supported, but is no longer required. Runtime
-    config can point an agent at direct OpenAI, a custom compatible
-    endpoint, or disable inference for that agent.
-    """
+class LLMGateway:
+    """Thin async client over an OpenAI-compatible chat/embedding API."""
 
     _TIER_FALLBACK_CHAIN: dict[ModelTier, list[ModelTier]] = {
         ModelTier.POWERFUL: [ModelTier.POWERFUL, ModelTier.FAST, ModelTier.FALLBACK],
@@ -110,10 +103,7 @@ class TrueFoundryGateway:
         return self._model_override or self._tier_models[tier]
 
     def openai_base_url(self) -> str:
-        base = self.base_url.rstrip("/")
-        if self.provider == "truefoundry":
-            return f"{base}/api/inference/openai"
-        return base
+        return self.base_url.rstrip("/")
 
     def _key_fingerprint(self) -> str:
         if not self.api_key:
@@ -159,7 +149,7 @@ class TrueFoundryGateway:
                 )
             except (httpx.HTTPError, GatewayError) as exc:
                 logger.warning(
-                    "tfy_gateway.tier_failed",
+                    "llm_gateway.tier_failed",
                     extra={"tier": fb_tier.value, "error": str(exc)},
                 )
                 last_err = exc
@@ -276,10 +266,16 @@ class TrueFoundryGateway:
             prompt_tokens=usage_block.get("prompt_tokens", 0),
             completion_tokens=usage_block.get("completion_tokens", 0),
             total_tokens=usage_block.get("total_tokens", 0),
-            cost_usd=float(resp.headers.get("x-tfy-cost-usd", 0.0) or 0.0),
+            cost_usd=float(resp.headers.get("x-llm-cost-usd", 0.0) or 0.0),
             latency_ms=latency_ms,
-            trace_id=resp.headers.get("x-tfy-trace-id", ""),
-            cached=resp.headers.get("x-tfy-cache", "miss").lower() == "hit",
+            trace_id=(
+                resp.headers.get("x-llm-trace-id")
+                or resp.headers.get("x-request-id")
+                or resp.headers.get("x-trace-id")
+                or resp.headers.get("traceparent")
+                or ""
+            ),
+            cached=resp.headers.get("x-llm-cache", "miss").lower() == "hit",
         )
         return GatewayResponse(
             content=choice.get("content") or "",
@@ -299,9 +295,9 @@ class TrueFoundryGateway:
 
 
 class GatewayError(RuntimeError):
-    """Raised when the TrueFoundry gateway returns an unrecoverable error."""
+    """Raised when the configured LLM gateway returns an unrecoverable error."""
 
 
-def get_gateway(agent_name: str | None = None) -> TrueFoundryGateway:
+def get_gateway(agent_name: str | None = None) -> LLMGateway:
     """Return a gateway client using current runtime config."""
-    return TrueFoundryGateway(agent_name=agent_name)
+    return LLMGateway(agent_name=agent_name)

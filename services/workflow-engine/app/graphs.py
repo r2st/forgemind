@@ -7,9 +7,8 @@ finite-state machine whose nodes are *either*:
   * Calls into Hermes specialist agents (RCA, PdM, Reporting)
   * Calls into downstream services via HTTP
 
-LangGraph owns the *control flow*; Hermes owns the *intelligence*;
-TrueFoundry owns the *inference*. Together they form the production
-substrate of ForgeMind AI.
+LangGraph owns the *control flow*; Hermes owns the agent behavior; the
+configured OpenAI-compatible gateway owns inference.
 
 Four graphs are defined here:
 

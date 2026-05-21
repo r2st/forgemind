@@ -1,9 +1,8 @@
-"""LLM-assisted severity classification via TrueFoundry AI Gateway (FAST tier).
+"""LLM-assisted severity classification via the configured LLM gateway.
 
 We deliberately use the cheap tier here — severity classification is
-high-volume and doesn't need a powerful model. The gateway's routing
-rules can also fall back to the local Ollama tier if the cheap upstream
-fails.
+high-volume and doesn't need a powerful model. If the configured model is
+unavailable, the gateway client falls back through the configured tiers.
 """
 
 from __future__ import annotations
@@ -12,7 +11,7 @@ import json
 from typing import Any
 
 from forgemind_common import get_logger
-from forgemind_common.tfy_gateway import GatewayError, ModelTier, get_gateway
+from forgemind_common.llm_gateway import GatewayError, ModelTier, get_gateway
 
 log = get_logger(__name__)
 

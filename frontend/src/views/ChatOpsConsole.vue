@@ -45,7 +45,7 @@ async function send() {
   <div class="h-full flex flex-col gap-4">
     <div>
       <h1 class="text-2xl font-semibold text-slate-100">ChatOps Console</h1>
-      <p class="text-sm text-slate-400">Hermes ChatOps Agent · tool-using · routed via TrueFoundry.</p>
+      <p class="text-sm text-slate-400">Hermes ChatOps Agent · tool-using · routed through the configured LLM API.</p>
     </div>
 
     <div class="card flex-1 flex flex-col min-h-0">

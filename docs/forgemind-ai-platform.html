@@ -876,7 +876,7 @@
             <a href="#data">Industrial Data</a>
             <a href="#agents">Hermes Agents</a>
             <a href="#workflows">LangGraph Workflows</a>
-            <a href="#truefoundry">TrueFoundry Layer</a>
+            <a href="#llm-api">LLM API Layer</a>
             <a href="#services">Microservices</a>
             <a href="#features">Advanced Features</a>
             <a href="#product">Product UI</a>
@@ -956,7 +956,7 @@
               The platform is designed as a real industrial AI system, not a chatbot shell.
               It continuously ingests plant telemetry, applies anomaly detection, coordinates
               autonomous Hermes specialists, executes LangGraph workflows with approval gates,
-              and routes all model calls through TrueFoundry for governance and observability.
+              and routes model calls through a configurable OpenAI-compatible API.
             </p>
             <div class="metric-row">
               <div class="metric"><span>Microservices</span><strong>12</strong></div>
@@ -971,7 +971,7 @@
           <div class="section-inner">
             <div class="section-header">
               <div class="section-label">Core Architecture</div>
-              <h2>Hermes for agency, LangGraph for control, TrueFoundry for infrastructure</h2>
+              <h2>Hermes for agency, LangGraph for control, configurable APIs for inference</h2>
             </div>
             <div class="architecture-layers">
               <div class="layer">
@@ -992,11 +992,10 @@
                 </p>
               </div>
               <div class="layer">
-                <strong>TrueFoundry</strong>
+                <strong>LLM API Gateway</strong>
                 <p>
-                  Enterprise AI infrastructure layer for AI Gateway routing, multi-model
-                  fallback, semantic caching, model serving, autoscaling, tracing, token
-                  accounting, quotas, rate limits, and auditability.
+                  Configurable OpenAI-compatible boundary for base URL, API key, model
+                  selection, request tracing, token accounting, rate limits, and auditability.
                 </p>
               </div>
             </div>
@@ -1115,7 +1114,7 @@
               <p>
                 The Supervisor routes user requests and system events to the appropriate specialist.
                 It coordinates multi-agent work, keeps operational context coherent, and uses
-                TrueFoundry-backed models without binding the application to a single provider.
+                configurable model endpoints without binding the application to a single provider.
               </p>
               <div class="badge-row">
                 <span class="badge">planning</span>
@@ -1167,11 +1166,11 @@ If severity is HIGH or CRITICAL, approval_gate pauses the workflow until an oper
           </div>
         </section>
 
-        <section id="truefoundry">
+        <section id="llm-api">
           <div class="section-inner">
             <div class="section-header">
-              <div class="section-label">TrueFoundry Infrastructure</div>
-              <h2>Gateway routing, model serving, autoscaling, and governance</h2>
+              <div class="section-label">LLM API Infrastructure</div>
+              <h2>Configurable model endpoints, keys, and governance</h2>
             </div>
             <div class="table-wrap">
               <table>
@@ -1179,7 +1178,7 @@ If severity is HIGH or CRITICAL, approval_gate pauses the workflow until an oper
                   <tr>
                     <th>Tier</th>
                     <th>Primary model</th>
-                    <th>Fallbacks</th>
+                    <th>Fallback model</th>
                     <th>Typical usage</th>
                   </tr>
                 </thead>
@@ -1187,25 +1186,25 @@ If severity is HIGH or CRITICAL, approval_gate pauses the workflow until an oper
                   <tr>
                     <td>fast</td>
                     <td>gpt-4o-mini</td>
-                    <td>Claude Haiku, local Llama 3.1 8B</td>
+                    <td>gpt-4o-mini</td>
                     <td>Severity classification, remediation drafts, Monitoring Agent summaries.</td>
                   </tr>
                   <tr>
                     <td>powerful</td>
-                    <td>Claude Sonnet 4.5</td>
-                    <td>gpt-4o, local Llama 3.1 70B</td>
+                    <td>gpt-4o</td>
+                    <td>gpt-4o-mini</td>
                     <td>RCA reasoning, predictive maintenance explanation, reporting, ChatOps.</td>
                   </tr>
                   <tr>
                     <td>fallback</td>
-                    <td>Local Llama 3.1 8B</td>
+                    <td>gpt-4o-mini</td>
                     <td>None</td>
                     <td>Last-resort inference when external providers are unavailable.</td>
                   </tr>
                   <tr>
                     <td>embedding</td>
                     <td>text-embedding-3-small</td>
-                    <td>nomic-embed-text</td>
+                    <td>provider default</td>
                     <td>Incident memory ingest and similarity search in pgvector.</td>
                   </tr>
                 </tbody>
@@ -1213,16 +1212,16 @@ If severity is HIGH or CRITICAL, approval_gate pauses the workflow until an oper
             </div>
             <div class="grid three" style="margin-top: 16px">
               <div class="card">
-                <h3>AI Gateway</h3>
-                <p>Provides OpenAI-compatible routing, provider abstraction, semantic caching, retries, fallback policies, and per-service quotas.</p>
+                <h3>API configuration</h3>
+                <p>Provides OpenAI-compatible base URL, model, API key, and enablement controls from the Admin Panel.</p>
               </div>
               <div class="card">
-                <h3>Model serving</h3>
-                <p>Hosts inference APIs, anomaly services, predictive services, RCA services, and operational intelligence workloads behind managed endpoints.</p>
+                <h3>Model access</h3>
+                <p>Connects ForgeMind agents to direct providers, private gateways, or self-hosted compatible endpoints.</p>
               </div>
               <div class="card">
-                <h3>Autoscaling</h3>
-                <p>Scales agent services, inference services, and RCA pipelines based on CPU, request volume, and latency pressure.</p>
+                <h3>Runtime control</h3>
+                <p>Lets operators rotate keys and switch models per agent without rebuilding service containers.</p>
               </div>
             </div>
           </div>
@@ -1264,7 +1263,7 @@ If severity is HIGH or CRITICAL, approval_gate pauses the workflow until an oper
               <div class="card"><h3>Confidence scoring</h3><p>RCA and predictive maintenance outputs quantify uncertainty and expose evidence behind decisions.</p></div>
               <div class="card"><h3>Predictive maintenance</h3><p>Failure risk over 24h and 72h windows drives recommended maintenance timing.</p></div>
               <div class="card"><h3>Bottleneck analysis</h3><p>Production analytics correlates downtime, throughput, defects, and machine health by line.</p></div>
-              <div class="card"><h3>Semantic caching</h3><p>TrueFoundry-backed caching lowers repeated reasoning cost for similar operational questions.</p></div>
+              <div class="card"><h3>Semantic caching</h3><p>A private gateway can lower repeated reasoning cost for similar operational questions.</p></div>
               <div class="card"><h3>Agent activity tracing</h3><p>Agent runs and workflow nodes surface trace IDs, token usage, cost, latency, and model choices.</p></div>
             </div>
           </div>
@@ -1315,7 +1314,7 @@ If severity is HIGH or CRITICAL, approval_gate pauses the workflow until an oper
             <div class="grid three">
               <div class="card"><h3>Identity</h3><p>JWT authentication, RBAC roles, identity propagation through the API gateway, and per-role UI behavior.</p></div>
               <div class="card"><h3>Approval workflows</h3><p>High-risk maintenance and remediation actions pause at human approval gates before execution.</p></div>
-              <div class="card"><h3>API governance</h3><p>Rate limits, quotas, API management, audit logs, service boundaries, and secure secrets via TrueFoundry.</p></div>
+              <div class="card"><h3>API governance</h3><p>Rate limits, quotas, API management, audit logs, service boundaries, and masked API secrets.</p></div>
             </div>
           </div>
         </section>
@@ -1333,11 +1332,11 @@ If severity is HIGH or CRITICAL, approval_gate pauses the workflow until an oper
               </div>
               <div class="card accent-green">
                 <h3>OpenTelemetry traces</h3>
-                <p>Trace IDs connect frontend activity, API requests, workflow nodes, Hermes agent runs, and TrueFoundry model calls.</p>
+                <p>Trace IDs connect frontend activity, API requests, workflow nodes, Hermes agent runs, and model calls when the configured API returns them.</p>
               </div>
               <div class="card accent-amber">
-                <h3>TrueFoundry analytics</h3>
-                <p>Tracks token usage, inference latency, retries, fallback rate, cache hit rate, model health, and cost per agent.</p>
+                <h3>LLM API analytics</h3>
+                <p>Tracks token usage, inference latency, model health, and cost per agent when usage metadata is available.</p>
               </div>
             </div>
             <div class="code-block" style="margin-top: 16px">
@@ -1383,8 +1382,8 @@ POST /reports/generate</pre>
             </div>
             <p style="margin-top: 16px">
               In development, routes are exposed through the API gateway at
-              <code>http://localhost:8080/api/v1/...</code>. In production, TrueFoundry ingress
-              exposes the same API shape behind the configured workspace domain.
+              <code>http://localhost:8080/api/v1/...</code>. In production, your ingress
+              exposes the same API shape behind the configured domain.
             </p>
           </div>
         </section>
@@ -1393,7 +1392,7 @@ POST /reports/generate</pre>
           <div class="section-inner">
             <div class="section-header">
               <div class="section-label">Deployment</div>
-              <h2>Local development, Kubernetes, and TrueFoundry production paths</h2>
+              <h2>Local development and Kubernetes production paths</h2>
             </div>
             <div class="grid three">
               <div class="card">
@@ -1410,10 +1409,9 @@ docker compose up --build</pre></div>
   --namespace forgemind</pre></div>
               </div>
               <div class="card">
-                <h3>TrueFoundry</h3>
-                <p>Applies workspace config, AI Gateway routing, secrets, autoscaling service specs, tracing, and model governance.</p>
-                <div class="code-block"><pre>export TFY_WORKSPACE=forgemind-prod
-./infra/truefoundry/deploy.sh</pre></div>
+                <h3>Admin-managed APIs</h3>
+                <p>Configure global and per-agent base URLs, models, API keys, and enabled state from the Admin Panel.</p>
+                <div class="code-block"><pre>http://localhost:5173/admin</pre></div>
               </div>
             </div>
           </div>

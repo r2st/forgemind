@@ -53,57 +53,20 @@ class Settings(BaseSettings):
     # ------------------------------------------------------------------
     # LLM gateway
     # ------------------------------------------------------------------
-    llm_provider: Literal["truefoundry", "openai", "openai-compatible", "disabled"] = Field(
-        default="truefoundry",
-        description="Default LLM provider. Individual agents can override this at runtime.",
+    llm_provider: str = Field(
+        default="openai-compatible",
+        description="Default LLM provider. Individual agents can override this from the admin panel.",
     )
     agent_config_path: str = Field(
         default=".runtime/agent_config.json",
         description="Shared JSON file used by the admin panel for per-agent LLM settings.",
     )
 
-    # TrueFoundry AI Gateway. Optional: select `openai` or
-    # `openai-compatible` through LLM_PROVIDER or the admin panel to run
-    # without TrueFoundry.
-    tfy_gateway_base_url: str = Field(
-        default="https://gateway.truefoundry.ai",
-        description="TrueFoundry AI Gateway base URL (OpenAI-compatible).",
-    )
-    tfy_gateway_api_key: str = Field(
-        default="",
-        description="API key for the TrueFoundry AI Gateway.",
-    )
-    tfy_workspace: str = Field(
-        default="forgemind",
-        description="TrueFoundry workspace name used for deploys.",
-    )
-    tfy_control_plane_url: str = Field(
-        default="https://app.truefoundry.com",
-        description="TrueFoundry control-plane URL (used for MCP server discovery).",
-    )
-    tfy_mcp_namespace: str = Field(
-        default="truefoundry",
-        description="Tenant/namespace under which MCP servers are registered.",
-    )
-    tfy_mcp_enabled_servers: list[str] = Field(
-        default_factory=lambda: ["common-tools", "deepwiki0"],
-        description="Which MCP servers to bind into Hermes tool registries.",
-    )
-    tfy_mcp_enabled: bool = Field(
-        default=False,
-        description="Enable TrueFoundry MCP tools. Disabled by default so TrueFoundry is optional.",
-    )
-
-    # Logical model tiers — the gateway maps these to concrete providers.
-    tfy_model_fast: str = "openai-main/gpt-4o-mini"
-    tfy_model_powerful: str = "openai-main/gpt-4o"
-    tfy_model_embedding: str = "openai-main/text-embedding-3-small"
-    tfy_model_fallback: str = "ollama-local/llama3.1:8b"
-
-    # Direct OpenAI / OpenAI-compatible defaults.
+    # OpenAI-compatible defaults. The admin panel can override these
+    # globally or per agent at runtime.
     openai_base_url: str = Field(
         default="https://api.openai.com/v1",
-        description="OpenAI-compatible base URL used when LLM_PROVIDER=openai or openai-compatible.",
+        description="Default OpenAI-compatible base URL.",
     )
     openai_api_key: str = Field(
         default="",

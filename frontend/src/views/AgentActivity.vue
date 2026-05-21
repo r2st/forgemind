@@ -98,7 +98,7 @@ function statusClass(s) {
             <div><div class="text-slate-500 uppercase tracking-wider text-[10px]">Agent</div><div class="font-mono text-slate-100">{{ selected.agent_name }} · tier {{ selected.tier }}</div></div>
             <div><div class="text-slate-500 uppercase tracking-wider text-[10px]">Task</div><div class="text-slate-100">{{ selected.task }}</div></div>
             <div><div class="text-slate-500 uppercase tracking-wider text-[10px]">Model</div><div class="font-mono text-slate-100">{{ selected.model_used }}</div></div>
-            <div><div class="text-slate-500 uppercase tracking-wider text-[10px]">TrueFoundry trace</div><div class="font-mono text-slate-100 truncate">{{ selected.tfy_trace_id || '—' }}</div></div>
+            <div><div class="text-slate-500 uppercase tracking-wider text-[10px]">LLM trace</div><div class="font-mono text-slate-100 truncate">{{ selected.trace_id || '—' }}</div></div>
             <div>
               <div class="text-slate-500 uppercase tracking-wider text-[10px]">Tool calls</div>
               <ul class="space-y-1 mt-1">

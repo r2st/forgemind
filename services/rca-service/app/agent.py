@@ -4,13 +4,13 @@ A Hermes specialist that runs an investigation loop:
 
   1. fetch the incident record
   2. fetch a fresh telemetry snapshot for the machine
-  3. semantic-search prior similar incidents (pgvector via TF gateway embeddings)
+  3. semantic-search prior similar incidents (pgvector via configured embeddings)
   4. reason over evidence, produce a structured RCA report
   5. persist the summary back into long-term memory so future incidents
      benefit from this one.
 
-Tier = POWERFUL (Claude Sonnet via TrueFoundry by default). Falls back
-to FAST and then local fallback automatically inside the gateway.
+Tier = POWERFUL. The gateway can fall back to cheaper or local models
+based on the configured tier defaults.
 """
 
 from __future__ import annotations

@@ -18,21 +18,13 @@
 x-svc-env: &svc_env
   ENVIRONMENT: ${ENVIRONMENT:-dev}
   LOG_LEVEL: ${LOG_LEVEL:-INFO}
-  LLM_PROVIDER: ${LLM_PROVIDER:-truefoundry}
+  LLM_PROVIDER: ${LLM_PROVIDER:-openai-compatible}
   AGENT_CONFIG_PATH: ${AGENT_CONFIG_PATH:-/app/.runtime/agent_config.json}
   POSTGRES_DSN: postgresql+asyncpg://forgemind:forgemind@postgres:5432/forgemind
   REDIS_URL: redis://redis:6379/0
   NATS_URL: nats://nats:4222
   TELEMETRY_SUBJECT: forgemind.telemetry
   INCIDENTS_SUBJECT: forgemind.incidents
-  TFY_GATEWAY_BASE_URL: ${TFY_GATEWAY_BASE_URL:-https://gateway.truefoundry.ai}
-  TFY_GATEWAY_API_KEY: ${TFY_GATEWAY_API_KEY:-}
-  TFY_MCP_ENABLED: ${TFY_MCP_ENABLED:-false}
-  TFY_WORKSPACE: ${TFY_WORKSPACE:-forgemind}
-  TFY_MODEL_FAST: ${TFY_MODEL_FAST:-openai-main/gpt-4o-mini}
-  TFY_MODEL_POWERFUL: ${TFY_MODEL_POWERFUL:-openai-main/gpt-4o}
-  TFY_MODEL_EMBEDDING: ${TFY_MODEL_EMBEDDING:-openai-main/text-embedding-3-small}
-  TFY_MODEL_FALLBACK: ${TFY_MODEL_FALLBACK:-ollama-local/llama3.1:8b}
   OPENAI_BASE_URL: ${OPENAI_BASE_URL:-https://api.openai.com/v1}
   OPENAI_API_KEY: ${OPENAI_API_KEY:-}
   OPENAI_MODEL_FAST: ${OPENAI_MODEL_FAST:-gpt-4o-mini}

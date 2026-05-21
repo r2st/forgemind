@@ -20,13 +20,15 @@ ForgeMind is built on three layers with sharply distinct responsibilities. Getti
                                   │
                                   ▼
 ┌──────────────────────────────────────────────────────────────────────┐
-│                          TrueFoundry                                 │
-│   AI Gateway (multi-model routing, fallback, cost cap, cache)        │
-│   Model serving · Autoscaling · Observability · Governance · Deploy  │
+│                    OpenAI-Compatible LLM API                         │
+│   Configured base URL · API key · model tiers · optional gateway     │
+│   Direct provider, private proxy, or self-hosted compatible API      │
 └──────────────────────────────────────────────────────────────────────┘
 ```
 
-Hermes routes every LLM call through TrueFoundry (`base_url` + `api_key`). LangGraph calls Hermes agents as nodes. Nothing in the application talks to OpenAI/Anthropic/Ollama directly — that lock-in is owned by the gateway.
+Hermes routes every LLM call through the configured OpenAI-compatible API
+(`base_url` + `api_key`). LangGraph calls Hermes agents as nodes. The Admin
+Panel can override base URL, model, API key, and enabled state per agent.
 
 ## Service map
 
@@ -62,9 +64,9 @@ Hermes routes every LLM call through TrueFoundry (`base_url` + `api_key`). LangG
                               │                 │                     │
                               ▼                 ▼                     ▼
                        ┌──────────────────────────────────────────────────────┐
-                       │  TrueFoundry AI Gateway                              │
-                       │  (OpenAI/Anthropic/Ollama, tier routing, cost cap,   │
-                       │   semantic cache, observability)                     │
+                       │  Configured OpenAI-Compatible API                    │
+                       │  (direct provider, private gateway, or self-hosted   │
+                       │   compatible endpoint)                               │
                        └──────────────────────────────────────────────────────┘
 ```
 
@@ -95,18 +97,17 @@ Each node mutates a shared `WorkflowState`. The `assess_severity` node combines 
 
 The RCA Agent is the only one that writes durable agent memory (vector summaries of past incidents). All other operational state lives in the relational store; pgvector is reserved for semantic recall.
 
-## TrueFoundry AI Gateway tiers
+## LLM API Model Tiers
 
-Hermes asks for a *tier*; the gateway picks a concrete model.
+Hermes asks for a *tier*; the runtime maps that tier to a concrete model. The
+Admin Panel can override the model globally or per agent.
 
-| Tier | Primary | Fallbacks | Cost cap / req | Used by |
-| ---- | ------- | --------- | -------------- | ------- |
-| `fast` | `openai-main/gpt-4o-mini` | `anthropic-main/claude-haiku-4-5`, `ollama-local/llama3.1:8b` | $0.01 | severity classifier, remediation agent, monitoring agent |
-| `powerful` | `anthropic-main/claude-sonnet-4-5` | `openai-main/gpt-4o`, `ollama-local/llama3.1:70b` | $0.50 | RCA, PdM, supervisor, reporting, chatops |
-| `fallback` | `ollama-local/llama3.1:8b` | — | $0 | last-resort backstop |
-| `embedding` | `openai-main/text-embedding-3-small` | `ollama-local/nomic-embed-text` | — | pgvector ingest/search |
-
-Routing rules live in `infra/truefoundry/gateway/routing.yaml`.
+| Tier | Default model | Used by |
+| ---- | ------------- | ------- |
+| `fast` | `gpt-4o-mini` | severity classifier, remediation agent, monitoring agent |
+| `powerful` | `gpt-4o` | RCA, PdM, supervisor, reporting, chatops |
+| `fallback` | `gpt-4o-mini` | last-resort backstop |
+| `embedding` | `text-embedding-3-small` | pgvector ingest/search |
 
 ## Data model
 
@@ -115,19 +116,19 @@ Routing rules live in `infra/truefoundry/gateway/routing.yaml`.
   - `incident_memory` (pgvector 1536-dim) — long-term RCA memory.
   - `rca_reports` — structured RCA outputs with findings, recommendations, confidence.
   - `ops_reports` — generated shift/executive summaries.
-- **Redis** — chat sessions, semantic cache (passthrough via gateway).
+- **Redis** — chat sessions and runtime cache.
 - **NATS** — `forgemind.telemetry`, `forgemind.incidents` subjects (JetStream-ready).
 
 ## Observability
 
 - Every FastAPI service exposes Prometheus at `/metrics`.
 - Custom counters: `forgemind_anomalies_total{machine,severity}`, `forgemind_llm_tokens_total{service,tier,model,kind}`, `forgemind_llm_cost_usd{service,tier,model}`.
-- TrueFoundry adds inference-side metrics: per-model latency, retries, fallbacks, cache hit rate.
-- Frontend AI Agent Activity page surfaces TrueFoundry trace IDs so an operator can pivot from a UI row to a gateway trace.
+- The configured LLM API may return request/trace IDs; the frontend surfaces those IDs when present.
+- Token and cost counters are populated from OpenAI-compatible usage metadata when available.
 
 ## Security
 
 - JWT (HS256) auth at the API gateway; RBAC roles `viewer`, `operator`, `engineer`, `admin`.
 - Rate limit at the gateway (300 req/min per IP).
-- All TrueFoundry secrets stored in `tfy-secret://` paths, not env vars in the image.
-- Per-service quotas in the gateway config (daily tokens and cost cap per service).
+- LLM API keys are stored in the shared runtime config volume when entered through the Admin Panel, and are masked in API responses.
+- Per-agent keys can be rotated without rebuilding containers.

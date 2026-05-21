@@ -139,34 +139,8 @@ short — under 8 sentences — unless the user asks for detail."""
 
 
 async def build_chatops_agent_with_mcp() -> HermesAgentRuntime:
-    """Build the ChatOps agent with internal tools + TrueFoundry MCP Gateway tools.
-
-    Falls back to internal-only tools if the MCP gateway isn't reachable
-    (e.g. running tests with no TFY credentials).
-    """
-    from forgemind_common import get_mcp_gateway
-
+    """Build the ChatOps agent with internal platform tools."""
     tools = build_chat_tools()
-    if not settings.tfy_mcp_enabled:
-        return new_runtime(
-            "chatops-agent",
-            CHAT_SYSTEM_PROMPT,
-            tier=ModelTier.POWERFUL,
-            tools=tools,
-            max_iterations=10,
-        )
-    try:
-        mcp = get_mcp_gateway()
-        mcp_tools = await mcp.build_tool_registry(
-            servers=settings.tfy_mcp_enabled_servers,
-            prefix_with_server=True,
-        )
-        # Merge MCP tools into the chat registry (internal tools win on name).
-        for name, tool in mcp_tools._tools.items():
-            tools._tools.setdefault(name, tool)
-    except Exception:  # noqa: BLE001
-        import logging
-        logging.getLogger(__name__).warning("chatops.mcp_tools_unavailable", exc_info=True)
     return new_runtime(
         "chatops-agent",
         CHAT_SYSTEM_PROMPT,

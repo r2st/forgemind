@@ -62,7 +62,7 @@ async function triggerDemo() {
       <div>
         <h1 class="text-2xl font-semibold text-slate-100">Operations Dashboard</h1>
         <p class="text-sm text-slate-400">
-          Real-time plant intelligence — orchestrated by Hermes, served by TrueFoundry.
+          Real-time plant intelligence — orchestrated by Hermes and the configured LLM API.
         </p>
       </div>
       <button class="btn-primary" @click="triggerDemo">Inject Demo Anomalies</button>

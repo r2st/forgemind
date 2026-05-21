@@ -3,7 +3,7 @@ import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { Admin } from '../composables/api'
 
 const overview = ref({ agents: [], services: [], default_config: {} })
-const defaultForm = ref(formFromConfig({ provider: 'truefoundry', enabled: true }))
+const defaultForm = ref(formFromConfig({ provider: 'openai-compatible', enabled: true }))
 const agentForms = ref({})
 const saving = ref({})
 const error = ref('')
@@ -11,9 +11,7 @@ let timer = null
 
 const providerOptions = [
   { value: 'default', label: 'default' },
-  { value: 'truefoundry', label: 'truefoundry' },
-  { value: 'openai', label: 'openai' },
-  { value: 'openai-compatible', label: 'openai-compatible' },
+  { value: 'openai-compatible', label: 'OpenAI-compatible' },
   { value: 'disabled', label: 'disabled' },
 ]
 
@@ -38,7 +36,7 @@ async function load() {
     defaultForm.value = formFromConfig({
       ...defaultConfig,
       provider: defaultConfig.provider === 'default'
-        ? (defaultConfig.resolved_provider || 'truefoundry')
+        ? (defaultConfig.resolved_provider || 'openai-compatible')
         : defaultConfig.provider,
     })
     overview.value = data
@@ -137,7 +135,7 @@ onBeforeUnmount(() => clearInterval(timer))
         <div class="stat-delta">configured runtimes</div>
       </div>
       <div class="stat">
-        <div class="stat-label">Default Provider</div>
+        <div class="stat-label">Default API</div>
         <div class="text-lg font-semibold text-slate-100 font-mono truncate">{{ overview.default_config?.resolved_provider || '-' }}</div>
         <div class="stat-delta truncate">{{ overview.default_config?.resolved_model || '-' }}</div>
       </div>
@@ -157,7 +155,7 @@ onBeforeUnmount(() => clearInterval(timer))
       </div>
       <div class="grid grid-cols-1 md:grid-cols-5 gap-3 text-sm">
         <label class="space-y-1">
-          <span class="text-xs uppercase tracking-wider text-slate-400">Provider</span>
+          <span class="text-xs uppercase tracking-wider text-slate-400">API Type</span>
           <select v-model="defaultForm.provider" class="w-full bg-ink-700 border border-ink-600 rounded-md px-2 py-2">
             <option v-for="option in defaultProviderOptions" :key="option.value" :value="option.value">{{ option.label }}</option>
           </select>
@@ -203,7 +201,7 @@ onBeforeUnmount(() => clearInterval(timer))
             <th class="text-left py-2 pr-4">Agent</th>
             <th class="text-left pr-4">Service</th>
             <th class="text-left pr-4">Health</th>
-            <th class="text-left pr-4">Provider</th>
+            <th class="text-left pr-4">API Type</th>
             <th class="text-left pr-4">Base URL</th>
             <th class="text-left pr-4">Model</th>
             <th class="text-left pr-4">API Key</th>

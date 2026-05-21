@@ -13,17 +13,17 @@ config:
   natsUrl: nats://nats:4222
   telemetrySubject: forgemind.telemetry
   incidentsSubject: forgemind.incidents
-  tfy:
-    gatewayBaseUrl: https://llm-gateway.truefoundry.com
-    workspace: forgemind
-    modelFast: openai-main/gpt-4o-mini
-    modelPowerful: anthropic-main/claude-sonnet-4-5
-    modelEmbedding: openai-main/text-embedding-3-small
-    modelFallback: ollama-local/llama3.1:8b
+  llm:
+    provider: openai-compatible
+    baseUrl: https://api.openai.com/v1
+    modelFast: gpt-4o-mini
+    modelPowerful: gpt-4o
+    modelEmbedding: text-embedding-3-small
+    modelFallback: gpt-4o-mini
 
 secrets:
   # Inject via --set-string or external-secrets in prod.
-  tfyApiKey: ""
+  llmApiKey: ""
   jwtSecret: "change-me"
 
 # Per-service resource + replica settings. Add more services by appending here.

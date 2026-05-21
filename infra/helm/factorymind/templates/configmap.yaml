@@ -11,12 +11,12 @@ data:
   NATS_URL: {{ .Values.config.natsUrl | quote }}
   TELEMETRY_SUBJECT: {{ .Values.config.telemetrySubject | quote }}
   INCIDENTS_SUBJECT: {{ .Values.config.incidentsSubject | quote }}
-  TFY_GATEWAY_BASE_URL: {{ .Values.config.tfy.gatewayBaseUrl | quote }}
-  TFY_WORKSPACE: {{ .Values.config.tfy.workspace | quote }}
-  TFY_MODEL_FAST: {{ .Values.config.tfy.modelFast | quote }}
-  TFY_MODEL_POWERFUL: {{ .Values.config.tfy.modelPowerful | quote }}
-  TFY_MODEL_EMBEDDING: {{ .Values.config.tfy.modelEmbedding | quote }}
-  TFY_MODEL_FALLBACK: {{ .Values.config.tfy.modelFallback | quote }}
+  LLM_PROVIDER: {{ .Values.config.llm.provider | quote }}
+  OPENAI_BASE_URL: {{ .Values.config.llm.baseUrl | quote }}
+  OPENAI_MODEL_FAST: {{ .Values.config.llm.modelFast | quote }}
+  OPENAI_MODEL_POWERFUL: {{ .Values.config.llm.modelPowerful | quote }}
+  OPENAI_MODEL_EMBEDDING: {{ .Values.config.llm.modelEmbedding | quote }}
+  OPENAI_MODEL_FALLBACK: {{ .Values.config.llm.modelFallback | quote }}
 ---
 apiVersion: v1
 kind: Secret
@@ -25,5 +25,5 @@ metadata:
   namespace: {{ .Values.global.namespace }}
 type: Opaque
 stringData:
-  TFY_GATEWAY_API_KEY: {{ .Values.secrets.tfyApiKey | quote }}
+  OPENAI_API_KEY: {{ .Values.secrets.llmApiKey | quote }}
   JWT_SECRET: {{ .Values.secrets.jwtSecret | quote }}

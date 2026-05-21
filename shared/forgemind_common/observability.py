@@ -25,12 +25,12 @@ REQUEST_LATENCY = Histogram(
 )
 LLM_TOKENS = Counter(
     "forgemind_llm_tokens_total",
-    "Total LLM tokens consumed (via TrueFoundry gateway)",
+    "Total LLM tokens consumed via the configured LLM gateway",
     ["service", "tier", "model", "kind"],  # kind = prompt|completion
 )
 LLM_COST = Counter(
     "forgemind_llm_cost_usd",
-    "Total LLM cost in USD (via TrueFoundry gateway)",
+    "Total LLM cost in USD via the configured LLM gateway",
     ["service", "tier", "model"],
 )
 ANOMALY_COUNT = Counter(

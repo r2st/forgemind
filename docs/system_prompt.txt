@@ -8,7 +8,7 @@ ForgeMind AI is an enterprise AI-powered autonomous manufacturing operations cop
 
 - Hermes Agent
 - LangGraph
-- TrueFoundry
+- an OpenAI-compatible LLM API gateway
 
 ====================================================
 PRIMARY OBJECTIVE
@@ -46,7 +46,7 @@ The platform MUST heavily utilize:
 
 1. Hermes Agent
 2. LangGraph
-3. TrueFoundry
+3. OpenAI-compatible LLM API gateway
 
 ====================================================
 HERMES AGENT RESPONSIBILITIES
@@ -125,12 +125,12 @@ Example LangGraph workflows:
 - incident escalation graph
 
 ====================================================
-TRUEFOUNDRY RESPONSIBILITIES
+LLM API GATEWAY RESPONSIBILITIES
 ====================================================
 
-TrueFoundry acts as the enterprise AI infrastructure layer.
+The configured LLM API gateway acts as the enterprise AI infrastructure boundary.
 
-The system MUST use TrueFoundry for:
+The system MUST support a configurable OpenAI-compatible API for:
 
 1. AI Gateway
 Implement:
@@ -297,7 +297,8 @@ Observability:
 - OpenTelemetry
 
 Deployment:
-- TrueFoundry
+- Docker Compose
+- Kubernetes / Helm
 
 ====================================================
 UI REQUIREMENTS
@@ -377,7 +378,7 @@ Generate:
 - Dockerfiles
 - Kubernetes manifests
 - Helm charts
-- TrueFoundry deployment configs
+- generic deployment configs
 - observability setup
 - telemetry simulator
 - incident simulator

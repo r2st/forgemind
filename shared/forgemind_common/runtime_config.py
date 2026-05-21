@@ -15,9 +15,9 @@ from pathlib import Path
 from typing import Any, Literal
 
 from .config import get_settings
-from .tfy_gateway import ModelTier
+from .llm_gateway import ModelTier
 
-ProviderName = Literal["default", "truefoundry", "openai", "openai-compatible", "disabled"]
+ProviderName = Literal["default", "openai-compatible", "disabled"]
 
 KNOWN_AGENTS: list[dict[str, str]] = [
     {
@@ -90,7 +90,7 @@ class AgentLLMConfig:
 
 @dataclass(frozen=True)
 class ResolvedLLMConfig:
-    provider: Literal["truefoundry", "openai", "openai-compatible", "disabled"]
+    provider: Literal["openai-compatible", "disabled"]
     base_url: str
     api_key: str
     model_by_tier: dict[ModelTier, str]
@@ -103,10 +103,7 @@ class ResolvedLLMConfig:
         return self.model_override or self.model_by_tier[tier]
 
     def openai_base_url(self) -> str:
-        base = self.base_url.rstrip("/")
-        if self.provider == "truefoundry":
-            return f"{base}/api/inference/openai"
-        return base
+        return self.base_url.rstrip("/")
 
     def signature(self) -> tuple[str, str, str, str, bool]:
         return (
@@ -192,7 +189,8 @@ def resolve_llm_config(agent_name: str | None = None) -> ResolvedLLMConfig:
         provider = default_provider
     if provider == "default":
         provider = settings.llm_provider
-    if provider not in {"truefoundry", "openai", "openai-compatible", "disabled"}:
+    provider = _normalize_provider(provider)
+    if provider not in {"openai-compatible", "disabled"}:
         provider = "disabled"
 
     settings_base, settings_key, tier_models = _settings_provider_defaults(provider)
@@ -248,18 +246,7 @@ def _settings_provider_defaults(
     provider: str,
 ) -> tuple[str, str, dict[ModelTier, str]]:
     settings = get_settings()
-    if provider == "truefoundry":
-        return (
-            settings.tfy_gateway_base_url,
-            settings.tfy_gateway_api_key,
-            {
-                ModelTier.FAST: settings.tfy_model_fast,
-                ModelTier.POWERFUL: settings.tfy_model_powerful,
-                ModelTier.FALLBACK: settings.tfy_model_fallback,
-                ModelTier.EMBEDDING: settings.tfy_model_embedding,
-            },
-        )
-    if provider in {"openai", "openai-compatible"}:
+    if provider == "openai-compatible":
         return (
             settings.openai_base_url,
             settings.openai_api_key,
@@ -284,7 +271,8 @@ def _settings_provider_defaults(
 
 def _clean_config(raw: dict[str, Any]) -> dict[str, Any]:
     provider = str(raw.get("provider") or "default").strip()
-    if provider not in {"default", "truefoundry", "openai", "openai-compatible", "disabled"}:
+    provider = _normalize_provider(provider)
+    if provider not in {"default", "openai-compatible", "disabled"}:
         provider = "default"
     return {
         "provider": provider,
@@ -318,3 +306,10 @@ def _secret_fingerprint(value: str) -> str:
     if not value:
         return ""
     return hashlib.sha256(value.encode("utf-8")).hexdigest()[:12]
+
+
+def _normalize_provider(provider: str) -> str:
+    normalized = provider.strip().lower()
+    if normalized in {"openai", "generic", "custom"}:
+        return "openai-compatible"
+    return normalized

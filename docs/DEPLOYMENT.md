@@ -6,7 +6,7 @@ Three deployment targets, in increasing order of seriousness.
 
 ```bash
 cp .env.example .env
-# Set OPENAI_API_KEY, TFY_GATEWAY_API_KEY, or configure keys in /admin.
+# Set OPENAI_API_KEY, or configure keys in /admin.
 docker compose up --build
 ```
 
@@ -36,42 +36,15 @@ The Helm chart is in `infra/helm/factorymind/` (folder name kept stable; chart `
 helm dep update infra/helm/factorymind
 helm install forgemind infra/helm/factorymind \
   --namespace forgemind --create-namespace \
-  --set secrets.tfyApiKey=<your-truefoundry-pat> \
+  --set config.llm.baseUrl=https://api.openai.com/v1 \
+  --set secrets.llmApiKey=<your-openai-compatible-key> \
   --set secrets.jwtSecret=$(openssl rand -hex 32) \
   --set ingress.host=forgemind.example.com
 ```
 
 Each service gets a Deployment, Service, and (for hot services) HPA. Resource requests are tuned per-service in `values.yaml`. Infrastructure (Postgres + pgvector, Redis, NATS) can be turned off via `--set infra.postgres.enabled=false` etc. when using managed services.
 
-## 3. TrueFoundry (recommended for production)
-
-Why TrueFoundry: because the same platform that serves your LLMs through the AI Gateway can run the services that *call* the AI Gateway. Trace IDs propagate; cost accounting is unified; quotas are enforced at one boundary.
-
-```bash
-pip install truefoundry
-tfy login --host https://app.truefoundry.com
-
-export TFY_HOST=https://app.truefoundry.com
-export TFY_API_KEY=tfy-pat-…
-export TFY_WORKSPACE=forgemind-prod
-export TFY_DOMAIN=tfy.yourcompany.com
-
-# Optional — providers will be created from these
-export OPENAI_API_KEY=sk-…
-export ANTHROPIC_API_KEY=sk-ant-…
-
-./infra/truefoundry/deploy.sh
-```
-
-The script:
-
-1. Applies `workspace.yaml` (creates the workspace if missing, sets resource quota).
-2. Uploads `gateway/routing.yaml` (defines `fast` / `powerful` / `fallback` / `embedding` tiers with multi-provider fallback, cost caps, semantic cache, per-service quotas).
-3. Creates workspace secrets: `tfy-gateway-key`, `jwt-secret`, `openai-api-key`, `anthropic-api-key`.
-4. Applies all 12 service specs (`infra/truefoundry/services/*.yaml`). Each spec is a `tfy.Service` with image build, autoscaling (CPU + RPS), env (env vars sourced from `tfy-secret://` paths), health checks, OTel + Prom + log collection.
-5. Prints the public URL per service.
-
-### How Hermes routes through the configured provider
+## 3. How Hermes routes through the configured API
 
 Every Hermes agent in ForgeMind is constructed with:
 
@@ -84,19 +57,20 @@ _HermesAIAgent(
 )
 ```
 
-TrueFoundry is one supported OpenAI-compatible provider, not a hard
-requirement. The Admin Panel writes per-agent provider, model, base URL, and
-API key overrides to the shared runtime config volume. Without an override,
-agents use `LLM_PROVIDER` and the matching environment defaults.
+The Admin Panel writes per-agent API type, model, base URL, and API key
+overrides to the shared runtime config volume. Without an override, agents use
+`LLM_PROVIDER=openai-compatible` and the `OPENAI_*` environment defaults.
 
 ### Rolling updates
 
-Each `tfy apply` is idempotent. Image changes trigger a rolling restart; env-only changes do a hot reload where supported. To roll back:
+For Compose, rebuild and recreate the affected services:
 
 ```bash
-tfy services rollback <svc> --workspace $TFY_WORKSPACE
+docker compose up -d --build api-gateway ai-orchestrator rca-service chatops-service workflow-engine
 ```
 
 ### Observability dashboards
 
-After deploy, the gateway exposes per-model dashboards in the TrueFoundry UI: token volume, latency p50/p95/p99, fallback rate, cache hit rate, cost per agent. Application metrics from the FastAPI services are scraped by TrueFoundry's Prometheus and surfaced in the same workspace.
+Every service exposes `/metrics` for Prometheus. LLM token and cost counters are
+reported by service, tier, model, and kind when the configured API returns usage
+metadata.

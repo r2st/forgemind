@@ -4,7 +4,7 @@ Three layers, in increasing cost:
 
 1. Statistical (rolling z-score + EWMA + IQR)        — O(1) per reading.
 2. IsolationForest, per-machine trained on warmup buffer.
-3. LLM-assisted severity scoring (TrueFoundry gateway, FAST tier).
+3. LLM-assisted severity scoring (configured gateway, FAST tier).
 
 The first layer flags a candidate; the second layer corroborates; the
 third layer produces a human-readable label + severity.

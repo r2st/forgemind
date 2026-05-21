@@ -160,7 +160,7 @@ async def admin_agents() -> dict[str, Any]:
         agents.append({**agent, "health": health, "llm": cfg, "status": agent_status})
     return {
         "default_config": config_for_admin(),
-        "truefoundry_optional": True,
+        "llm_config_source": "admin",
         "agents": agents,
         "services": services,
     }

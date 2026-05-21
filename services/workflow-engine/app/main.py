@@ -1,4 +1,4 @@
-"""Workflow Engine Service — LangGraph runtime over Hermes + TrueFoundry."""
+"""Workflow Engine Service — LangGraph runtime over Hermes agents."""
 
 from __future__ import annotations
 

@@ -1,6 +1,6 @@
 # API Reference
 
-All routes are exposed via the API gateway at `http://localhost:8080/api/v1/...` in dev, or `https://forgemind-<workspace>.<domain>/api/v1/...` in TrueFoundry.
+All routes are exposed via the API gateway at `http://localhost:8080/api/v1/...` in dev, or through your configured production ingress.
 
 ## Auth
 

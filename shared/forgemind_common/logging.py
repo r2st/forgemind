@@ -1,7 +1,7 @@
 """Structured logging setup using structlog.
 
-Every service logs JSON to stdout so TrueFoundry / Kubernetes log
-collectors can ingest cleanly.
+Every service logs JSON to stdout so container and Kubernetes log collectors
+can ingest cleanly.
 """
 
 from __future__ import annotations
