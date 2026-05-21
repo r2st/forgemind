@@ -52,3 +52,10 @@ export const Workflows = {
   runs: (limit = 50) => api.get('/workflows/runs', { params: { limit } }).then((r) => r.data),
   run: (name, payload) => api.post(`/workflows/${name}/run`, payload).then((r) => r.data),
 }
+export const Admin = {
+  overview: () => api.get('/admin/agents').then((r) => r.data),
+  health: () => api.get('/admin/health').then((r) => r.data),
+  updateDefault: (payload) => api.put('/admin/llm/default', payload).then((r) => r.data),
+  updateAgent: (agentName, payload) =>
+    api.put(`/admin/agents/${agentName}/config`, payload).then((r) => r.data),
+}

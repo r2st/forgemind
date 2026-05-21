@@ -4,13 +4,13 @@
 
 ForgeMind AI is an enterprise-grade industrial AI platform that continuously monitors factory telemetry, detects anomalies, predicts failures, runs autonomous root-cause investigations, and generates operational intelligence — coordinated by a multi-agent system that's transparent, observable, and production-deployable.
 
-It is built on three mandatory core layers:
+It is built on three core layers:
 
 | Layer | Role |
 | ---- | ---- |
 | **Hermes Agent** (Nous Research) | Autonomous agents — RCA, PdM, Production Optimization, Reporting, ChatOps, Monitoring, plus a Supervisor that orchestrates them. Each agent has persistent memory, tool use, and skill reuse. |
 | **LangGraph** | Deterministic stateful workflow engine. Investigation, maintenance approval, remediation, and escalation flows run as graphs whose nodes wrap Hermes agents. |
-| **TrueFoundry** | Enterprise AI infrastructure: AI Gateway (multi-provider routing, cost-aware fallback, semantic cache, observability), model serving, autoscaling, governance, deployment orchestration. |
+| **AI Gateway provider** | TrueFoundry AI Gateway, direct OpenAI, or any OpenAI-compatible endpoint. Providers and API keys can be set globally or per agent from the Admin Panel. |
 
 ```
 Telemetry → Anomaly Detection → LangGraph Investigation
@@ -28,7 +28,7 @@ Telemetry → Anomaly Detection → LangGraph Investigation
 git clone <this repo> forgemind-ai
 cd forgemind-ai
 cp .env.example .env
-# edit .env: set TFY_GATEWAY_API_KEY (your TrueFoundry personal access token)
+# edit .env or use the Admin Panel to set an OpenAI-compatible key per agent
 docker compose up --build
 ```
 
@@ -38,6 +38,7 @@ Then open:
 - **API gateway**: http://localhost:8080
 - **Grafana**: http://localhost:3000 (admin / admin)
 - **Prometheus**: http://localhost:9090
+- **Admin Panel**: http://localhost:5173/admin
 
 Drive the end-to-end demo:
 
@@ -88,7 +89,7 @@ helm upgrade --install forgemind ./infra/helm/factorymind \
 | `notification-service` | Subscribes to incidents, adaptive flood suppression, fan-out               |
 | `frontend`             | Vue 3 + Tailwind, 10 pages, live charts, dark Datadog-style UI             |
 
-## The frontend (10 pages)
+## The frontend
 
 1. **Operations Dashboard** — totals, top failure risks, live vibration chart, incident feed
 2. **Machine Health** — per-machine cards, live readings, anomaly injectors
@@ -98,8 +99,9 @@ helm upgrade --install forgemind ./infra/helm/factorymind \
 6. **AI RCA Reports** — full RCA report viewer with findings + recommendations
 7. **ChatOps Console** — tool-using Hermes agent with preset prompts
 8. **Executive Reports** — generated shift / executive summaries
-9. **AI Agent Activity** — every Hermes agent run + every LangGraph workflow run, with TrueFoundry trace IDs, token usage, cost
-10. **Settings** — tier selection, identity, TrueFoundry key entry
+9. **AI Agent Activity** — every Hermes agent run + every LangGraph workflow run, with provider trace IDs, token usage, cost
+10. **Admin Panel** — agent health checks, service readiness, per-agent provider/API key configuration
+11. **Settings** — tier selection and identity
 
 ## Documentation
 

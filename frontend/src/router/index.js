@@ -10,6 +10,7 @@ const routes = [
   { path: '/chatops',                name: 'chatops',    component: () => import('../views/ChatOpsConsole.vue') },
   { path: '/executive',              name: 'executive',  component: () => import('../views/ExecutiveReports.vue') },
   { path: '/agents',                 name: 'agents',     component: () => import('../views/AgentActivity.vue') },
+  { path: '/admin',                  name: 'admin',      component: () => import('../views/AdminPanel.vue') },
   { path: '/settings',               name: 'settings',   component: () => import('../views/Settings.vue') },
 ]
 

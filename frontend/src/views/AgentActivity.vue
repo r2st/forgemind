@@ -52,7 +52,7 @@ function statusClass(s) {
       <div>
         <h1 class="text-2xl font-semibold text-slate-100">AI Agent Activity</h1>
         <p class="text-sm text-slate-400">
-          Hermes agents and LangGraph workflows · all inference via TrueFoundry.
+          Hermes agents and LangGraph workflows across configured AI providers.
         </p>
       </div>
       <div class="flex gap-1 bg-ink-700/60 p-1 rounded-lg">

@@ -25,7 +25,15 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
-from forgemind_common import get_logger, get_settings, setup_logging
+from forgemind_common import (
+    KNOWN_AGENTS,
+    config_for_admin,
+    get_logger,
+    get_settings,
+    setup_logging,
+    update_agent_config,
+    update_default_config,
+)
 from forgemind_common.auth import create_access_token, require_user
 from forgemind_common.observability import install_metrics
 
@@ -93,6 +101,121 @@ async def login(req: LoginRequest) -> dict:
 @app.get("/api/v1/auth/me")
 async def me(user=Depends(require_user)) -> dict:
     return {"sub": user.sub, "role": user.role}
+
+
+# ----------------------------------------------------------------------
+# Admin
+# ----------------------------------------------------------------------
+
+
+class LLMConfigUpdate(BaseModel):
+    provider: str | None = None
+    base_url: str | None = None
+    model: str | None = None
+    api_key: str | None = None
+    clear_api_key: bool = False
+    enabled: bool | None = None
+
+
+_SERVICE_HEALTH: dict[str, str | None] = {
+    "api-gateway": None,
+    "telemetry-simulator": "http://telemetry-simulator:8000",
+    "telemetry-ingestion": "http://telemetry-ingestion:8000",
+    "anomaly-detection": settings.anomaly_service_url,
+    "rca-service": settings.rca_service_url,
+    "predictive-maintenance": settings.pdm_service_url,
+    "ai-orchestrator": settings.orchestrator_url,
+    "workflow-engine": settings.workflow_engine_url,
+    "chatops-service": settings.chat_service_url,
+    "reporting-service": settings.reporting_service_url,
+    "notification-service": settings.notification_service_url,
+}
+
+
+@app.get("/api/v1/admin/health")
+async def admin_health() -> dict[str, Any]:
+    services = await _check_services()
+    ok = sum(1 for s in services if s["status"] == "ok")
+    return {
+        "summary": {
+            "ok": ok,
+            "total": len(services),
+            "degraded": len(services) - ok,
+        },
+        "services": services,
+    }
+
+
+@app.get("/api/v1/admin/agents")
+async def admin_agents() -> dict[str, Any]:
+    services = await _check_services()
+    service_by_name = {s["name"]: s for s in services}
+    agents: list[dict[str, Any]] = []
+    for agent in KNOWN_AGENTS:
+        health = service_by_name.get(agent["service"], {"status": "unknown"})
+        cfg = config_for_admin(agent["name"])
+        agent_status = "disabled"
+        if cfg["resolved_enabled"]:
+            agent_status = "ok" if health.get("status") == "ok" and cfg["resolved_api_key_set"] else "needs_config"
+        agents.append({**agent, "health": health, "llm": cfg, "status": agent_status})
+    return {
+        "default_config": config_for_admin(),
+        "truefoundry_optional": True,
+        "agents": agents,
+        "services": services,
+    }
+
+
+@app.put("/api/v1/admin/llm/default")
+async def update_default_llm_config(req: LLMConfigUpdate) -> dict[str, Any]:
+    patch = req.model_dump(exclude_unset=True)
+    update_default_config(patch)
+    return config_for_admin()
+
+
+@app.put("/api/v1/admin/agents/{agent_name}/config")
+async def update_agent_llm_config(agent_name: str, req: LLMConfigUpdate) -> dict[str, Any]:
+    known = {a["name"] for a in KNOWN_AGENTS}
+    if agent_name not in known:
+        raise HTTPException(404, f"unknown agent {agent_name}")
+    patch = req.model_dump(exclude_unset=True)
+    update_agent_config(agent_name, patch)
+    return config_for_admin(agent_name)
+
+
+async def _check_services() -> list[dict[str, Any]]:
+    async def one(name: str, base_url: str | None) -> dict[str, Any]:
+        if base_url is None:
+            return {
+                "name": name,
+                "status": "ok",
+                "status_code": 200,
+                "latency_ms": 0,
+                "detail": "local",
+            }
+        t0 = time.perf_counter()
+        try:
+            async with httpx.AsyncClient(timeout=3.0) as client:
+                resp = await client.get(f"{base_url.rstrip('/')}/healthz")
+            elapsed = int((time.perf_counter() - t0) * 1000)
+            return {
+                "name": name,
+                "status": "ok" if resp.status_code < 400 else "error",
+                "status_code": resp.status_code,
+                "latency_ms": elapsed,
+                "detail": resp.text[:200],
+            }
+        except Exception as exc:  # noqa: BLE001
+            elapsed = int((time.perf_counter() - t0) * 1000)
+            return {
+                "name": name,
+                "status": "error",
+                "status_code": 0,
+                "latency_ms": elapsed,
+                "detail": str(exc),
+            }
+
+    return await asyncio.gather(*(one(name, url) for name, url in _SERVICE_HEALTH.items()))
 
 
 # ----------------------------------------------------------------------

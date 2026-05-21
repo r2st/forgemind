@@ -24,6 +24,15 @@ from .hermes_runtime import (
     HERMES_AVAILABLE,
 )
 from .mcp_gateway import TrueFoundryMCPGateway, MCPServerInfo, get_mcp_gateway
+from .runtime_config import (
+    KNOWN_AGENTS,
+    config_for_admin,
+    load_runtime_config,
+    resolve_llm_config,
+    save_runtime_config,
+    update_agent_config,
+    update_default_config,
+)
 
 __version__ = "0.1.0"
 
@@ -54,4 +63,11 @@ __all__ = [
     "TrueFoundryMCPGateway",
     "MCPServerInfo",
     "get_mcp_gateway",
+    "KNOWN_AGENTS",
+    "config_for_admin",
+    "load_runtime_config",
+    "resolve_llm_config",
+    "save_runtime_config",
+    "update_agent_config",
+    "update_default_config",
 ]

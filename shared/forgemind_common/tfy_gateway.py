@@ -20,12 +20,12 @@ their own OpenAI clients.
 from __future__ import annotations
 
 import asyncio
+import hashlib
 import json
 import logging
 import time
 from dataclasses import dataclass, field
 from enum import Enum
-from functools import lru_cache
 from typing import Any, AsyncIterator
 
 import httpx
@@ -67,13 +67,11 @@ class GatewayResponse:
 
 
 class TrueFoundryGateway:
-    """Thin async client over the TrueFoundry AI Gateway.
+    """Thin async client over TrueFoundry or any OpenAI-compatible gateway.
 
-    The gateway exposes an OpenAI-compatible REST surface at
-    `{base_url}/api/inference/openai/chat/completions`. Routing
-    decisions live in the gateway config (see
-    `infra/truefoundry/gateway/routing.yaml`); the client just selects a
-    tier and passes through.
+    TrueFoundry remains supported, but is no longer required. Runtime
+    config can point an agent at direct OpenAI, a custom compatible
+    endpoint, or disable inference for that agent.
     """
 
     _TIER_FALLBACK_CHAIN: dict[ModelTier, list[ModelTier]] = {
@@ -88,16 +86,20 @@ class TrueFoundryGateway:
         base_url: str | None = None,
         api_key: str | None = None,
         timeout_s: float = 60.0,
+        agent_name: str | None = None,
     ) -> None:
+        from .runtime_config import resolve_llm_config
+
         s = get_settings()
-        self.base_url = (base_url or s.tfy_gateway_base_url).rstrip("/")
-        self.api_key = api_key or s.tfy_gateway_api_key
-        self._tier_models = {
-            ModelTier.FAST: s.tfy_model_fast,
-            ModelTier.POWERFUL: s.tfy_model_powerful,
-            ModelTier.FALLBACK: s.tfy_model_fallback,
-            ModelTier.EMBEDDING: s.tfy_model_embedding,
-        }
+        self.agent_name = agent_name
+        self._resolved = resolve_llm_config(agent_name)
+        self.provider = self._resolved.provider
+        self.enabled = self._resolved.enabled and self.provider != "disabled"
+        self.base_url = (base_url or self._resolved.base_url).rstrip("/")
+        self.api_key = api_key if api_key is not None else self._resolved.api_key
+        self._tier_models = dict(self._resolved.model_by_tier)
+        self._model_override = self._resolved.model_override
+        self._settings = s
         self._client = httpx.AsyncClient(timeout=timeout_s)
 
     # ------------------------------------------------------------------
@@ -105,7 +107,27 @@ class TrueFoundryGateway:
     # ------------------------------------------------------------------
 
     def model_for(self, tier: ModelTier) -> str:
-        return self._tier_models[tier]
+        return self._model_override or self._tier_models[tier]
+
+    def openai_base_url(self) -> str:
+        base = self.base_url.rstrip("/")
+        if self.provider == "truefoundry":
+            return f"{base}/api/inference/openai"
+        return base
+
+    def _key_fingerprint(self) -> str:
+        if not self.api_key:
+            return ""
+        return hashlib.sha256(self.api_key.encode("utf-8")).hexdigest()[:12]
+
+    def backend_signature(self, tier: ModelTier) -> tuple[str, str, str, str, bool]:
+        return (
+            self.provider,
+            self.openai_base_url(),
+            self.model_for(tier),
+            self._key_fingerprint(),
+            self.enabled,
+        )
 
     async def chat(
         self,
@@ -119,6 +141,10 @@ class TrueFoundryGateway:
         extra_headers: dict[str, str] | None = None,
     ) -> GatewayResponse:
         """Run a chat completion with tier-based fallback."""
+        if not self.enabled:
+            raise GatewayError(
+                f"LLM provider is disabled for agent {self.agent_name or 'default'}"
+            )
         last_err: Exception | None = None
         for fb_tier in self._TIER_FALLBACK_CHAIN[tier]:
             try:
@@ -150,8 +176,12 @@ class TrueFoundryGateway:
         tools: list[dict[str, Any]] | None = None,
     ) -> AsyncIterator[str]:
         """Stream tokens as they arrive. Falls back on initial connection error only."""
+        if not self.enabled:
+            raise GatewayError(
+                f"LLM provider is disabled for agent {self.agent_name or 'default'}"
+            )
         model = self.model_for(tier)
-        url = f"{self.base_url}/api/inference/openai/chat/completions"
+        url = f"{self.openai_base_url()}/chat/completions"
         payload: dict[str, Any] = {
             "model": model,
             "messages": messages,
@@ -183,8 +213,10 @@ class TrueFoundryGateway:
                     continue
 
     async def embed(self, texts: list[str]) -> list[list[float]]:
+        if not self.enabled:
+            raise GatewayError("LLM provider is disabled")
         model = self.model_for(ModelTier.EMBEDDING)
-        url = f"{self.base_url}/api/inference/openai/embeddings"
+        url = f"{self.openai_base_url()}/embeddings"
         resp = await self._client.post(
             url,
             json={"model": model, "input": texts},
@@ -214,7 +246,7 @@ class TrueFoundryGateway:
         extra_headers: dict[str, str] | None,
     ) -> GatewayResponse:
         model = self.model_for(tier)
-        url = f"{self.base_url}/api/inference/openai/chat/completions"
+        url = f"{self.openai_base_url()}/chat/completions"
         payload: dict[str, Any] = {
             "model": model,
             "messages": messages,
@@ -270,7 +302,6 @@ class GatewayError(RuntimeError):
     """Raised when the TrueFoundry gateway returns an unrecoverable error."""
 
 
-@lru_cache(maxsize=1)
-def get_gateway() -> TrueFoundryGateway:
-    """Process-wide singleton gateway client."""
-    return TrueFoundryGateway()
+def get_gateway(agent_name: str | None = None) -> TrueFoundryGateway:
+    """Return a gateway client using current runtime config."""
+    return TrueFoundryGateway(agent_name=agent_name)

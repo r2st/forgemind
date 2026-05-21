@@ -6,7 +6,7 @@ Three deployment targets, in increasing order of seriousness.
 
 ```bash
 cp .env.example .env
-# Required: TFY_GATEWAY_API_KEY=<your-truefoundry-pat>
+# Set OPENAI_API_KEY, TFY_GATEWAY_API_KEY, or configure keys in /admin.
 docker compose up --build
 ```
 
@@ -71,20 +71,23 @@ The script:
 4. Applies all 12 service specs (`infra/truefoundry/services/*.yaml`). Each spec is a `tfy.Service` with image build, autoscaling (CPU + RPS), env (env vars sourced from `tfy-secret://` paths), health checks, OTel + Prom + log collection.
 5. Prints the public URL per service.
 
-### How Hermes routes through TrueFoundry
+### How Hermes routes through the configured provider
 
 Every Hermes agent in ForgeMind is constructed with:
 
 ```python
 _HermesAIAgent(
-    model=settings.tfy_model_powerful,    # logical model name; gateway routes
-    base_url=f"{settings.tfy_gateway_base_url}/api/inference/openai",
-    api_key=settings.tfy_gateway_api_key,
+    model=runtime_config.model_for(tier),
+    base_url=runtime_config.openai_base_url(),
+    api_key=runtime_config.api_key,
     ...
 )
 ```
 
-That means Hermes treats TrueFoundry as a plain OpenAI-compatible endpoint. Provider abstraction, fallback, observability, and rate limiting all happen inside the gateway — Hermes does not need to know about Anthropic, Ollama, or any specific provider. The application is provider-agnostic by construction.
+TrueFoundry is one supported OpenAI-compatible provider, not a hard
+requirement. The Admin Panel writes per-agent provider, model, base URL, and
+API key overrides to the shared runtime config volume. Without an override,
+agents use `LLM_PROVIDER` and the matching environment defaults.
 
 ### Rolling updates
 

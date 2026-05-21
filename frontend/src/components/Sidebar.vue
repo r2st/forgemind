@@ -9,6 +9,7 @@ const nav = [
   { to: '/chatops',                label: 'ChatOps Console',     icon: '✎' },
   { to: '/executive',              label: 'Executive Reports',   icon: '∎' },
   { to: '/agents',                 label: 'AI Agent Activity',   icon: '☉' },
+  { to: '/admin',                  label: 'Admin Panel',         icon: '◉' },
   { to: '/settings',               label: 'Settings',            icon: '✱' },
 ]
 </script>
@@ -38,8 +39,8 @@ const nav = [
 
     <div class="px-3 py-3 border-t border-ink-600">
       <div class="card-tight text-[11px] text-slate-400 leading-relaxed">
-        <div class="text-accent-500 font-semibold mb-0.5">Hermes × TrueFoundry</div>
-        <div>Multi-agent orchestration on enterprise AI infra.</div>
+        <div class="text-accent-500 font-semibold mb-0.5">Hermes Runtime</div>
+        <div>Multi-agent orchestration on configurable AI infra.</div>
       </div>
     </div>
   </aside>

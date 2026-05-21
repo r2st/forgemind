@@ -23,8 +23,8 @@ function save() {
     </div>
 
     <div class="card space-y-3">
-      <h2 class="text-sm uppercase tracking-wider text-slate-200">TrueFoundry AI Gateway</h2>
-      <div class="text-sm text-slate-400">Default model tier for agent runs. Overridden per-agent in code.</div>
+      <h2 class="text-sm uppercase tracking-wider text-slate-200">LLM Runtime</h2>
+      <div class="text-sm text-slate-400">Default model tier for agent runs.</div>
       <select v-model="tier" class="bg-ink-700 border border-ink-600 rounded-md px-2 py-1 text-sm">
         <option value="fast">fast — cheap, high-volume (summaries, classification)</option>
         <option value="powerful">powerful — RCA, reasoning, executive reports</option>
@@ -32,7 +32,7 @@ function save() {
       </select>
 
       <label class="block text-sm text-slate-300 mt-3">Personal access token</label>
-      <input v-model="tfyKey" type="password" placeholder="Stored locally only" class="w-full bg-ink-700 border border-ink-600 rounded-md px-2 py-1 text-sm font-mono" />
+      <input v-model="tfyKey" type="password" placeholder="Use Admin Panel for backend keys" class="w-full bg-ink-700 border border-ink-600 rounded-md px-2 py-1 text-sm font-mono" />
 
       <button class="btn-primary mt-2" @click="save">Save</button>
       <span v-if="saved" class="ml-3 text-emerald-400 text-sm">Saved.</span>
@@ -42,8 +42,7 @@ function save() {
       <h2 class="text-sm uppercase tracking-wider text-slate-200">About</h2>
       <div class="text-sm text-slate-300 leading-relaxed">
         ForgeMind AI v0.1.0 — autonomous manufacturing operations copilot.
-        Built on Hermes Agent (multi-agent orchestration) and TrueFoundry
-        (AI Gateway, observability, autoscaling).
+        Built on Hermes Agent orchestration with configurable AI gateway providers.
       </div>
     </div>
   </div>

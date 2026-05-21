@@ -1,24 +1,22 @@
-"""Hermes Agent runtime, wired through the TrueFoundry AI Gateway.
+"""Hermes Agent runtime, wired through a configurable OpenAI-compatible gateway.
 
-This is the keystone integration between the two mandatory layers:
+This is the keystone integration between the runtime layers:
 
   * **Hermes** (Nous Research `hermes-agent`) provides the agent loop:
     tool calling, multi-turn memory, sub-agent delegation, skill
     creation, planning.
 
-  * **TrueFoundry** provides the LLM substrate: OpenAI-compatible
-    gateway, multi-provider routing, cost-aware fallback, observability,
-    autoscaling, governance.
+  * **LLM providers** supply the OpenAI-compatible inference substrate.
+    TrueFoundry is supported for gateway routing and observability, but
+    agents can also use direct OpenAI or another compatible endpoint.
 
-We pass the TrueFoundry gateway as Hermes's `base_url` + `api_key`, so
-every LLM call Hermes makes — across every agent — goes through the
-gateway. The gateway then handles model selection, fallback, semantic
-cache, token accounting, and trace propagation. Hermes treats it as a
-plain OpenAI-compatible endpoint.
+We pass the resolved provider as Hermes's `base_url` + `api_key`, so each
+agent can run through TrueFoundry, direct OpenAI, or a custom compatible
+endpoint.
 
 If the `hermes-agent` package isn't installed (e.g., during unit tests
-or a thin deploy) we degrade gracefully to a `LiteAgent` that uses our
-TrueFoundryGateway directly with manual tool dispatch. The public API
+or a thin deploy) we degrade gracefully to a `LiteAgent` that uses the
+configured gateway directly with manual tool dispatch. The public API
 (`HermesAgentRuntime.run`) is identical in both modes so callers don't
 care.
 """
@@ -177,7 +175,7 @@ class ToolRegistry:
 
 
 class HermesAgentRuntime:
-    """Wraps Nous Research's `AIAgent`, routed through TrueFoundry.
+    """Wraps Nous Research's `AIAgent`, routed through configured inference.
 
     Each ForgeMind specialist (Monitoring, RCA, PdM, Optimization,
     Reporting, ChatOps) is one instance of this runtime with its own
@@ -190,7 +188,7 @@ class HermesAgentRuntime:
       * trajectory capture (we can later fine-tune on real factory ops)
       * a uniform context-files loader (`AGENTS.md`)
 
-    Why route through TrueFoundry? Because the gateway gives us:
+    Why use a gateway provider? Because it gives us:
       * provider abstraction (OpenAI/Anthropic/Ollama via one URL)
       * cost-aware routing (cheap tier for summaries, powerful for RCA)
       * automatic fallback to local Ollama when upstream errors
@@ -213,25 +211,43 @@ class HermesAgentRuntime:
         self.tier = tier
         self.max_iterations = max_iterations
         self._settings = get_settings()
-        self._gateway = get_gateway()
-
+        self._gateway = get_gateway(agent_name)
+        self._backend_signature: tuple[str, str, str, str, bool] | None = None
         self._hermes: Any | None = None
+        self._configure_backend()
+
+    def _configure_backend(self) -> None:
+        """Refresh gateway/Hermes wiring from runtime config if it changed."""
+        self._gateway = get_gateway(self.agent_name)
+        signature = self._gateway.backend_signature(self.tier)
+        if signature == self._backend_signature:
+            return
+        self._backend_signature = signature
+        self._hermes = None
+        if not self._gateway.enabled:
+            log.warning("hermes.disabled agent=%s provider=%s", self.agent_name, self._gateway.provider)
+            return
         if HERMES_AVAILABLE and _HermesAIAgent is not None:
             try:
                 self._hermes = _HermesAIAgent(
-                    model=self._gateway.model_for(tier),
+                    model=self._gateway.model_for(self.tier),
                     quiet_mode=True,
-                    ephemeral_system_prompt=system_prompt,
+                    ephemeral_system_prompt=self.system_prompt,
                     skip_context_files=False,
                     skip_memory=False,
-                    max_iterations=max_iterations,
-                    base_url=f"{self._settings.tfy_gateway_base_url}/api/inference/openai",
-                    api_key=self._settings.tfy_gateway_api_key,
+                    max_iterations=self.max_iterations,
+                    base_url=self._gateway.openai_base_url(),
+                    api_key=self._gateway.api_key,
                     platform="forgemind",
                 )
-                log.info("hermes.ready agent=%s model=%s", agent_name, self._gateway.model_for(tier))
+                log.info(
+                    "hermes.ready agent=%s provider=%s model=%s",
+                    self.agent_name,
+                    self._gateway.provider,
+                    self._gateway.model_for(self.tier),
+                )
             except Exception:  # noqa: BLE001
-                log.exception("hermes.init_failed agent=%s; falling back to LiteAgent", agent_name)
+                log.exception("hermes.init_failed agent=%s; falling back to LiteAgent", self.agent_name)
                 self._hermes = None
 
     # ------------------------------------------------------------------
@@ -245,6 +261,7 @@ class HermesAgentRuntime:
         history: list[dict[str, Any]] | None = None,
         task_id: str | None = None,
     ) -> AgentActivity:
+        self._configure_backend()
         activity = AgentActivity(
             agent_name=self.agent_name,
             task=task,

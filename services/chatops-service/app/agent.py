@@ -147,6 +147,14 @@ async def build_chatops_agent_with_mcp() -> HermesAgentRuntime:
     from forgemind_common import get_mcp_gateway
 
     tools = build_chat_tools()
+    if not settings.tfy_mcp_enabled:
+        return new_runtime(
+            "chatops-agent",
+            CHAT_SYSTEM_PROMPT,
+            tier=ModelTier.POWERFUL,
+            tools=tools,
+            max_iterations=10,
+        )
     try:
         mcp = get_mcp_gateway()
         mcp_tools = await mcp.build_tool_registry(
