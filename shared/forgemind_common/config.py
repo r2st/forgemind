@@ -57,7 +57,7 @@ class Settings(BaseSettings):
     # service. Routing rules (cheap vs powerful vs local fallback) are
     # configured in `infra/truefoundry/gateway/routing.yaml`.
     tfy_gateway_base_url: str = Field(
-        default="https://llm-gateway.truefoundry.com",
+        default="https://gateway.truefoundry.ai",
         description="TrueFoundry AI Gateway base URL (OpenAI-compatible).",
     )
     tfy_gateway_api_key: str = Field(
@@ -71,7 +71,7 @@ class Settings(BaseSettings):
 
     # Logical model tiers — the gateway maps these to concrete providers.
     tfy_model_fast: str = "openai-main/gpt-4o-mini"
-    tfy_model_powerful: str = "anthropic-main/claude-sonnet-4-5"
+    tfy_model_powerful: str = "openai-main/gpt-4o"
     tfy_model_embedding: str = "openai-main/text-embedding-3-small"
     tfy_model_fallback: str = "ollama-local/llama3.1:8b"
 
