@@ -236,6 +236,38 @@ effect immediately on the next agent run. No restart required.
 docker compose up -d --build api-gateway ai-orchestrator rca-service chatops-service workflow-engine
 ```
 
+### User authentication
+
+ForgeMind ships with a persistent, bcrypt-hashed user store managed from the
+Admin Panel (**Admin → Users** section) and the matching admin API:
+
+```
+GET    /api/v1/admin/auth/users
+PUT    /api/v1/admin/auth/users/<username>     # { "role": "...", "password": "..." }
+DELETE /api/v1/admin/auth/users/<username>
+```
+
+The store file (`auth_users.json`) lives on the `agent-config` volume next to
+`agent_config.json`. Mode 0600.
+
+`AUTH_*_USER` / `AUTH_*_PASS` env vars (see `.env.example`) are **bootstrap
+credentials only** — they let a fresh stack log in without any setup. As soon
+as you add or override a user from the Admin Panel, the store takes precedence
+over the env-var version of that username. Workflow:
+
+1. `docker compose up` — log in with the env-var admin (`admin` / `admin` in
+   the shipped defaults; change them in `.env`).
+2. Open **Admin → Users**. Click "Move to store" on the bootstrap admin and
+   set a strong password. The env-var version becomes inert for that name.
+3. Add additional users from the panel.
+4. Delete the env-var defaults from your `.env` or Kubernetes secret once
+   everyone you need is in the store.
+
+In Kubernetes, set the bootstrap creds via the `forgemind-secrets` Secret or
+inject them through your existing secret manager (external-secrets, Vault
+agent, etc.). Once users are seeded via the panel, the secret can be reduced
+to just `JWT_SECRET` + `POSTGRES_PASSWORD`.
+
 ### Observability dashboards
 
 Every service exposes `/metrics` for Prometheus. LLM token and cost counters are
