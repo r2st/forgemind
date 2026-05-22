@@ -156,3 +156,62 @@ def test_proxy_to_reporting(api_gateway_client, reporting_client):
 def test_proxy_to_pdm(api_gateway_client, pdm_client, simulator_client, anomaly_client):
     r = api_gateway_client.get("/api/v1/predictions")
     assert r.status_code == 200
+
+
+# ---------------------------------------------------------------------
+# Regression: /api/v1/admin/llm/* must reach the llm-gateway proxy, NOT
+# the generic reverse proxy that would 404 with "unknown section admin".
+# https://github.com/r2st/forgemind/issues/<llm-admin-404>
+# ---------------------------------------------------------------------
+
+
+def test_proxy_admin_llm_providers(api_gateway_client, admin_token, llm_gateway_client):
+    """The LLM admin SPA calls /admin/llm/providers on mount."""
+    r = api_gateway_client.get(
+        "/api/v1/admin/llm/providers",
+        headers={"Authorization": f"Bearer {admin_token}"},
+    )
+    assert r.status_code == 200, r.text
+    # Must NOT be the generic-proxy 404.
+    assert "unknown section" not in r.text
+
+
+def test_proxy_admin_llm_models(api_gateway_client, admin_token, llm_gateway_client):
+    r = api_gateway_client.get(
+        "/api/v1/admin/llm/models",
+        headers={"Authorization": f"Bearer {admin_token}"},
+    )
+    assert r.status_code == 200, r.text
+
+
+def test_proxy_admin_llm_usage(api_gateway_client, admin_token, llm_gateway_client):
+    r = api_gateway_client.get(
+        "/api/v1/admin/llm/usage",
+        headers={"Authorization": f"Bearer {admin_token}"},
+    )
+    assert r.status_code == 200, r.text
+
+
+def test_proxy_admin_llm_no_path(api_gateway_client, admin_token, llm_gateway_client):
+    """/api/v1/admin/llm (no trailing path) must still hit the proxy and
+    NOT fall through to the generic '/api/v1/{section}/{path:path}'
+    handler that returns 'unknown section admin'."""
+    r = api_gateway_client.get(
+        "/api/v1/admin/llm",
+        headers={"Authorization": f"Bearer {admin_token}"},
+    )
+    # Llm-gateway has no handler for /api/v1/admin/llm itself, so we
+    # expect 404 or 405 from upstream — but NEVER "unknown section admin".
+    assert "unknown section" not in r.text
+    assert r.status_code in (200, 404, 405)
+
+
+def test_proxy_admin_llm_trailing_slash(api_gateway_client, admin_token, llm_gateway_client):
+    """/api/v1/admin/llm/ (trailing slash, empty path) must also bypass
+    the generic proxy."""
+    r = api_gateway_client.get(
+        "/api/v1/admin/llm/",
+        headers={"Authorization": f"Bearer {admin_token}"},
+    )
+    assert "unknown section" not in r.text
+    assert r.status_code in (200, 404, 405)

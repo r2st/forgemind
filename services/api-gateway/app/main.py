@@ -208,6 +208,21 @@ LLM_GATEWAY_URL = "http://llm-gateway:8000"
 
 
 @app.api_route(
+    "/api/v1/admin/llm",
+    methods=["GET", "POST", "PUT", "DELETE", "PATCH"],
+    include_in_schema=False,
+)
+async def llm_admin_proxy_root(request: Request, user=Depends(require_user)) -> Any:
+    """Proxy /api/v1/admin/llm (no trailing path) to the llm-gateway.
+
+    Without this companion route, the generic reverse-proxy below would
+    treat the URL as section=`admin`, path=`llm` and return a misleading
+    404 ("unknown section admin"). See test_proxy_admin_llm_no_path.
+    """
+    return await _forward(request, f"{LLM_GATEWAY_URL}/api/v1/admin/llm")
+
+
+@app.api_route(
     "/api/v1/admin/llm/{path:path}",
     methods=["GET", "POST", "PUT", "DELETE", "PATCH"],
 )
