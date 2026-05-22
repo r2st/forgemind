@@ -19,6 +19,7 @@ dependencies = [
   "nats-py>=2.7",
   "fastapi>=0.110",
   "fastmcp>=2.13",
+  "bcrypt>=4.0",
 ]
 
 [tool.setuptools.packages.find]

@@ -31,18 +31,21 @@ x-svc-env: &svc_env
   OPENAI_MODEL_POWERFUL: ${OPENAI_MODEL_POWERFUL:-gpt-4o}
   OPENAI_MODEL_EMBEDDING: ${OPENAI_MODEL_EMBEDDING:-text-embedding-3-small}
   OPENAI_MODEL_FALLBACK: ${OPENAI_MODEL_FALLBACK:-gpt-4o-mini}
-  JWT_SECRET: ${JWT_SECRET}
+  JWT_SECRET: ${JWT_SECRET:-}
   LLM_GATEWAY_URL: http://llm-gateway:8000
   GATEWAY_SECRET_KEY: ${GATEWAY_SECRET_KEY:-}
-  # Auth credentials (override in production)
+  # Auth credentials — these are the BOOTSTRAP source only.
+  # Once an admin manages users from the Admin Panel
+  # (Admin → Users tab, or PUT /api/v1/admin/auth/users/<name>),
+  # the store entries take precedence over these env vars.
   AUTH_ADMIN_USER: ${AUTH_ADMIN_USER:-admin}
-  AUTH_ADMIN_PASS: ${AUTH_ADMIN_PASS}
+  AUTH_ADMIN_PASS: ${AUTH_ADMIN_PASS:-admin}
   AUTH_ENGINEER_USER: ${AUTH_ENGINEER_USER:-engineer}
-  AUTH_ENGINEER_PASS: ${AUTH_ENGINEER_PASS}
+  AUTH_ENGINEER_PASS: ${AUTH_ENGINEER_PASS:-engineer}
   AUTH_OPERATOR_USER: ${AUTH_OPERATOR_USER:-operator}
-  AUTH_OPERATOR_PASS: ${AUTH_OPERATOR_PASS}
+  AUTH_OPERATOR_PASS: ${AUTH_OPERATOR_PASS:-operator}
   AUTH_VIEWER_USER: ${AUTH_VIEWER_USER:-viewer}
-  AUTH_VIEWER_PASS: ${AUTH_VIEWER_PASS}
+  AUTH_VIEWER_PASS: ${AUTH_VIEWER_PASS:-viewer}
   CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost:5173,http://localhost:3000}
 
 x-agent-config-volumes: &agent_config_volumes
@@ -210,7 +213,7 @@ services:
     image: grafana/grafana:10.4.1
     environment:
       GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
-      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-admin}
     volumes:
       - ./infra/observability/grafana/provisioning:/etc/grafana/provisioning:ro
       - ./infra/observability/grafana/dashboards:/var/lib/grafana/dashboards:ro

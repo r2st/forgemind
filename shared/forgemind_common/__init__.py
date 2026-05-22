@@ -33,6 +33,19 @@ from .runtime_config import (
     update_agent_config,
     update_default_config,
 )
+from .auth_store import (
+    User as AuthUser,
+    VALID_ROLES,
+    list_users,
+    get_user,
+    upsert_user,
+    delete_user,
+    authenticate,
+    env_lookup,
+    has_store_users,
+    hash_password,
+    verify_password,
+)
 
 __version__ = "0.1.0"
 
@@ -71,4 +84,16 @@ __all__ = [
     "save_runtime_config",
     "update_agent_config",
     "update_default_config",
+    # auth_store
+    "AuthUser",
+    "VALID_ROLES",
+    "list_users",
+    "get_user",
+    "upsert_user",
+    "delete_user",
+    "authenticate",
+    "env_lookup",
+    "has_store_users",
+    "hash_password",
+    "verify_password",
 ]

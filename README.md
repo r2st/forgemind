@@ -136,8 +136,27 @@ helm upgrade --install forgemind ./infra/helm/factorymind \
 7. **ChatOps Console** — tool-using Hermes agent with preset prompts
 8. **Executive Reports** — generated shift / executive summaries
 9. **AI Agent Activity** — every Hermes agent run + every LangGraph workflow run, with LLM trace IDs, token usage, cost
-10. **Admin Panel** — agent health checks, service readiness, per-agent API base URL/model/key configuration
+10. **Admin Panel** — agent health checks, service readiness, per-agent API base URL/model/key configuration, **user management** (bcrypt-hashed credentials, add/edit/delete users, role assignment)
 11. **Settings** — tier selection and identity
+
+## Authentication
+
+Users live in a small persistent store (`auth_users.json` on the
+`agent-config` volume, bcrypt-hashed). The store is administered from
+the Admin Panel's **Users** section or via the admin API:
+
+```
+GET    /api/v1/admin/auth/users               # list
+PUT    /api/v1/admin/auth/users/<username>    # upsert: {role, password?}
+DELETE /api/v1/admin/auth/users/<username>    # delete
+```
+
+A fresh stack is bootstrapped from env vars (`AUTH_ADMIN_USER` /
+`AUTH_ADMIN_PASS`, etc. — see `.env.example`). As soon as an admin
+edits or adds a user from the panel, the store entry takes precedence
+over the env vars for that username. This keeps zero-config dev easy
+while letting production deployments rotate passwords without env-var
+changes / container restarts.
 
 ## Testing
 

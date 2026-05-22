@@ -1,6 +1,6 @@
 <script setup>
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
-import { Admin } from '../composables/api'
+import { Admin, AuthUsers } from '../composables/api'
 
 const overview = ref({ agents: [], services: [], default_config: {} })
 const defaultForm = ref(formFromConfig({ provider: 'openai-compatible', enabled: true }))
@@ -102,8 +102,94 @@ function boolText(value) {
   return value ? 'set' : 'missing'
 }
 
+// ----------------------------------------------------------------------
+// Users tab — bcrypt-hashed auth store + env-var bootstrap fallback
+// ----------------------------------------------------------------------
+const ROLES = ['viewer', 'operator', 'engineer', 'admin']
+const storeUsers = ref([])
+const envUsers = ref([])
+const userForm = ref(null)         // { username, role, password, isNew }
+const userError = ref('')
+const userBanner = ref('')
+const savingUser = ref(false)
+
+async function loadUsers() {
+  try {
+    userError.value = ''
+    const data = await AuthUsers.list()
+    storeUsers.value = data?.users || []
+    envUsers.value = (data?.env_users || []).filter(
+      (eu) => !storeUsers.value.some((su) => su.username === eu.username),
+    )
+  } catch (e) {
+    userError.value = readUserError(e, 'Failed to load users')
+  }
+}
+
+function newUserForm() {
+  userForm.value = { username: '', role: 'viewer', password: '', isNew: true }
+  userBanner.value = ''
+  userError.value = ''
+}
+
+function editUser(u) {
+  userForm.value = { username: u.username, role: u.role, password: '', isNew: false }
+  userBanner.value = ''
+  userError.value = ''
+}
+
+function promoteEnvUser(u) {
+  userForm.value = { username: u.username, role: u.role, password: '', isNew: true }
+  userBanner.value = 'Set a password to move this bootstrap user into the persistent store.'
+  userError.value = ''
+}
+
+async function saveUser() {
+  if (!userForm.value) return
+  const { username, role, password, isNew } = userForm.value
+  if (!username.trim()) {
+    userError.value = 'Username cannot be empty'
+    return
+  }
+  if (isNew && !password) {
+    userError.value = 'A password is required when creating a new user'
+    return
+  }
+  savingUser.value = true
+  try {
+    userError.value = ''
+    const payload = { role }
+    if (password) payload.password = password
+    await AuthUsers.upsert(username.trim(), payload)
+    userBanner.value = isNew ? `Created ${username}` : `Updated ${username}`
+    userForm.value = null
+    await loadUsers()
+  } catch (e) {
+    userError.value = readUserError(e, 'Failed to save user')
+  } finally {
+    savingUser.value = false
+  }
+}
+
+async function deleteUserConfirm(username) {
+  if (!window.confirm(`Delete user "${username}"? This cannot be undone.`)) return
+  try {
+    userError.value = ''
+    await AuthUsers.remove(username)
+    userBanner.value = `Deleted ${username}`
+    await loadUsers()
+  } catch (e) {
+    userError.value = readUserError(e, 'Failed to delete user')
+  }
+}
+
+function readUserError(e, fallback) {
+  return e?.response?.data?.detail || e?.message || fallback
+}
+
 onMounted(() => {
   load()
+  loadUsers()
   timer = setInterval(load, 10000)
 })
 onBeforeUnmount(() => clearInterval(timer))
@@ -279,6 +365,96 @@ onBeforeUnmount(() => clearInterval(timer))
           </tr>
         </tbody>
       </table>
+    </div>
+
+    <!-- ============================================================
+         Users: bcrypt-hashed, admin-managed credentials
+         ============================================================ -->
+    <div class="card space-y-4">
+      <div class="flex items-center justify-between">
+        <div>
+          <h2 class="text-sm uppercase tracking-wider text-slate-200">Users</h2>
+          <p class="text-xs text-slate-500 mt-1">
+            Credentials are bcrypt-hashed and persisted on the agent-config
+            volume. Bootstrap users from AUTH_*_USER / AUTH_*_PASS env vars
+            still work until you add or override them here.
+          </p>
+        </div>
+        <div class="flex items-center gap-2">
+          <button class="btn-secondary text-xs" @click="loadUsers">Refresh</button>
+          <button class="btn-primary text-xs" @click="newUserForm">+ Add User</button>
+        </div>
+      </div>
+
+      <p v-if="userError" class="text-xs text-red-400">{{ userError }}</p>
+      <p v-if="userBanner" class="text-xs text-emerald-300">{{ userBanner }}</p>
+
+      <table class="w-full text-xs">
+        <thead class="text-[10px] text-slate-400 uppercase tracking-wider border-b border-ink-600">
+          <tr>
+            <th class="text-left py-2">Username</th>
+            <th class="text-left">Role</th>
+            <th class="text-left">Source</th>
+            <th class="text-left">Updated</th>
+            <th class="text-right">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="u in storeUsers" :key="`store-${u.username}`" class="border-b border-ink-700/50">
+            <td class="py-2 font-mono text-slate-100">{{ u.username }}</td>
+            <td><span class="text-slate-300">{{ u.role }}</span></td>
+            <td class="text-slate-500">store</td>
+            <td class="text-slate-500 font-mono">{{ u.updated_at }}</td>
+            <td class="text-right space-x-2">
+              <button class="btn-secondary text-[10px]" @click="editUser(u)">Edit / Reset password</button>
+              <button class="btn-secondary text-[10px]" @click="deleteUserConfirm(u.username)">Delete</button>
+            </td>
+          </tr>
+          <tr v-for="u in envUsers" :key="`env-${u.username}`" class="border-b border-ink-700/50">
+            <td class="py-2 font-mono text-slate-100">{{ u.username }}</td>
+            <td><span class="text-slate-300">{{ u.role }}</span></td>
+            <td class="text-amber-300">env (bootstrap)</td>
+            <td class="text-slate-500">—</td>
+            <td class="text-right">
+              <button class="btn-secondary text-[10px]" @click="promoteEnvUser(u)">Move to store</button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <!-- Form -->
+      <div v-if="userForm" class="mt-4 border-t border-ink-700/60 pt-4 space-y-3">
+        <h3 class="text-xs uppercase tracking-wider text-slate-300">
+          {{ userForm.isNew ? 'Add user' : `Edit ${userForm.username}` }}
+        </h3>
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
+          <label class="space-y-1">
+            <span class="text-[10px] uppercase tracking-wider text-slate-400">Username</span>
+            <input v-model="userForm.username" :disabled="!userForm.isNew"
+              class="w-full bg-ink-700 border border-ink-600 rounded-md px-2 py-2 font-mono disabled:opacity-50" />
+          </label>
+          <label class="space-y-1">
+            <span class="text-[10px] uppercase tracking-wider text-slate-400">Role</span>
+            <select v-model="userForm.role"
+              class="w-full bg-ink-700 border border-ink-600 rounded-md px-2 py-2">
+              <option v-for="r in ROLES" :key="r" :value="r">{{ r }}</option>
+            </select>
+          </label>
+          <label class="space-y-1 md:col-span-2">
+            <span class="text-[10px] uppercase tracking-wider text-slate-400">
+              Password {{ userForm.isNew ? '(required)' : '(blank = keep existing)' }}
+            </span>
+            <input v-model="userForm.password" type="password"
+              class="w-full bg-ink-700 border border-ink-600 rounded-md px-2 py-2 font-mono" />
+          </label>
+        </div>
+        <div class="flex items-center justify-end gap-2 text-sm">
+          <button class="btn-secondary" @click="userForm = null">Cancel</button>
+          <button class="btn-primary" :disabled="savingUser" @click="saveUser">
+            {{ savingUser ? 'Saving' : 'Save' }}
+          </button>
+        </div>
+      </div>
     </div>
   </div>
 </template>

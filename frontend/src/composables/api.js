@@ -59,6 +59,17 @@ export const Admin = {
   updateAgent: (agentName, payload) =>
     api.put(`/admin/agents/${agentName}/config`, payload).then((r) => r.data),
 }
+
+// User credentials managed from the Admin Panel (bcrypt-hashed, persistent).
+// Env-var bootstrap users are returned under env_users in the list response.
+export const AuthUsers = {
+  list: () => api.get('/admin/auth/users').then((r) => r.data),
+  upsert: (username, payload) =>
+    api.put(`/admin/auth/users/${encodeURIComponent(username)}`, payload).then((r) => r.data),
+  remove: (username) =>
+    api.delete(`/admin/auth/users/${encodeURIComponent(username)}`).then((r) => r.data),
+}
+
 export const LLMGateway = {
   // Providers
   providers: () => api.get('/admin/llm/providers').then((r) => r.data),

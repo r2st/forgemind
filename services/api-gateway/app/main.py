@@ -27,12 +27,19 @@ from pydantic import BaseModel
 
 from forgemind_common import (
     KNOWN_AGENTS,
+    VALID_ROLES,
+    authenticate,
     config_for_admin,
+    delete_user,
+    env_lookup,
     get_logger,
     get_settings,
+    get_user,
+    list_users,
     setup_logging,
     update_agent_config,
     update_default_config,
+    upsert_user,
 )
 from forgemind_common.auth import create_access_token, require_user, require_admin
 from forgemind_common.observability import install_metrics
@@ -89,29 +96,39 @@ class LoginRequest(BaseModel):
 
 @app.post("/api/v1/auth/login")
 async def login(req: LoginRequest) -> dict:
-    # Demo: credential check via environment variables for security.
-    # Production deployment should use proper OIDC/OAuth2.
-    import os
-    import secrets
-    
-    # Check against environment-configured credentials
-    valid_users = {
-        os.getenv("AUTH_ADMIN_USER", "admin"): (os.getenv("AUTH_ADMIN_PASS"), "admin"),
-        os.getenv("AUTH_ENGINEER_USER", "engineer"): (os.getenv("AUTH_ENGINEER_PASS"), "engineer"),
-        os.getenv("AUTH_OPERATOR_USER", "operator"): (os.getenv("AUTH_OPERATOR_PASS"), "operator"),
-        os.getenv("AUTH_VIEWER_USER", "viewer"): (os.getenv("AUTH_VIEWER_PASS"), "viewer"),
-    }
-    
-    user_data = valid_users.get(req.username)
-    if not user_data or not user_data[0]:
-        raise HTTPException(401, "invalid credentials")
-    
-    expected_password, role = user_data
-    if not secrets.compare_digest(req.password, expected_password):
-        raise HTTPException(401, "invalid credentials")
-    
-    token = create_access_token(req.username, role=role)  # type: ignore[arg-type]
-    return {"access_token": token, "role": role, "username": req.username}
+    """Authenticate a user.
+
+    Order of precedence:
+
+      1. Persistent auth store (managed from the Admin Panel /
+         /api/v1/admin/auth/users endpoints). bcrypt-hashed passwords.
+      2. Environment-variable bootstrap users (AUTH_ADMIN_USER /
+         AUTH_ADMIN_PASS etc.). Falls through here only if the store
+         is empty OR if the requested username isn't in the store.
+
+    The fallback keeps zero-config deployments working while letting
+    operators move to admin-panel-managed credentials at any time.
+    """
+    # Persistent store first.
+    stored_user = authenticate(req.username, req.password)
+    if stored_user is not None:
+        token = create_access_token(stored_user.username, role=stored_user.role)
+        return {
+            "access_token": token,
+            "role": stored_user.role,
+            "username": stored_user.username,
+        }
+
+    # Env-var bootstrap fallback — only consulted when the store has no
+    # entry for this username (so an admin who renamed/disabled a user
+    # in the store can't be impersonated via leftover env vars).
+    if get_user(req.username) is None:
+        role = env_lookup(req.username, req.password)
+        if role is not None:
+            token = create_access_token(req.username, role=role)
+            return {"access_token": token, "role": role, "username": req.username}
+
+    raise HTTPException(401, "invalid credentials")
 
 
 @app.get("/api/v1/auth/me")
@@ -198,6 +215,66 @@ async def update_agent_llm_config(agent_name: str, req: LLMConfigUpdate, user=De
     patch = req.model_dump(exclude_unset=True)
     update_agent_config(agent_name, patch)
     return config_for_admin(agent_name)
+
+
+# ----------------------------------------------------------------------
+# Admin: user management (auth credentials)
+# ----------------------------------------------------------------------
+
+
+class AuthUserUpsert(BaseModel):
+    role: str
+    password: str | None = None  # None on update keeps the existing hash
+
+
+@app.get("/api/v1/admin/auth/users")
+async def admin_list_users(user=Depends(require_admin)) -> dict[str, Any]:
+    """List all users currently managed in the persistent auth store.
+
+    Env-var bootstrap users are surfaced separately under ``env_users``
+    so the operator can see what's coming from compose / .env without
+    revealing the passwords.
+    """
+    store_users = list_users()
+    env_users: list[dict[str, str]] = []
+    env_pairs = [
+        ("AUTH_ADMIN_USER", "AUTH_ADMIN_PASS", "admin"),
+        ("AUTH_ENGINEER_USER", "AUTH_ENGINEER_PASS", "engineer"),
+        ("AUTH_OPERATOR_USER", "AUTH_OPERATOR_PASS", "operator"),
+        ("AUTH_VIEWER_USER", "AUTH_VIEWER_PASS", "viewer"),
+    ]
+    for user_var, pass_var, role in env_pairs:
+        u = os.getenv(user_var, "")
+        p = os.getenv(pass_var, "")
+        if u and p:
+            env_users.append({"username": u, "role": role, "source": "env"})
+    return {"users": store_users, "env_users": env_users}
+
+
+@app.put("/api/v1/admin/auth/users/{username}")
+async def admin_upsert_user(
+    username: str, req: AuthUserUpsert, user=Depends(require_admin)
+) -> dict[str, Any]:
+    if req.role not in VALID_ROLES:
+        raise HTTPException(400, f"role must be one of {VALID_ROLES}")
+    if username.strip() == "":
+        raise HTTPException(400, "username cannot be empty")
+    existing = get_user(username)
+    if existing is None and not req.password:
+        raise HTTPException(400, "password required when creating a new user")
+    new_user = upsert_user(username=username, password=req.password, role=req.role)  # type: ignore[arg-type]
+    log.info("auth_user.upsert", username=username, role=req.role, by=user.sub)
+    return new_user.to_public_dict()
+
+
+@app.delete("/api/v1/admin/auth/users/{username}")
+async def admin_delete_user(username: str, user=Depends(require_admin)) -> dict[str, Any]:
+    if username == user.sub:
+        raise HTTPException(400, "cannot delete the currently logged-in admin user")
+    if not delete_user(username):
+        raise HTTPException(404, "user not found")
+    log.info("auth_user.delete", username=username, by=user.sub)
+    return {"deleted": username}
 
 
 # ----------------------------------------------------------------------

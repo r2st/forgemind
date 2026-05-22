@@ -6,3 +6,4 @@ pydantic-settings==2.2.1
 structlog==24.1.0
 prometheus-client==0.20.0
 python-jose[cryptography]==3.3.0
+bcrypt==4.1.2
