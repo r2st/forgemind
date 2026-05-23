@@ -365,11 +365,40 @@ _ROUTES: dict[str, str] = {
 }
 
 
+def _unknown_section_detail(section: str, path: str = "") -> str:
+    """Build a 404 detail that helps diagnose stale deployments.
+
+    The most common cause of seeing this for section=admin is a stale
+    api-gateway container that doesn't yet have the llm_admin_proxy
+    route (commits e83e5df / 4a5902a). Surface that hint loudly so
+    operators don't have to grep the source to figure it out.
+    """
+    base = f"unknown section {section}"
+    if section == "admin":
+        full_path = f"/api/v1/admin/{path}" if path else "/api/v1/admin"
+        return (
+            f"{base} — request reached the catch-all proxy. The api-gateway "
+            f"container is likely running an older image without the "
+            f"llm_admin_proxy route. Rebuild with: "
+            f"`docker compose build --no-cache api-gateway && "
+            f"docker compose up -d --force-recreate api-gateway`. "
+            f"Request: {full_path}"
+        )
+    return base
+
+
 @app.api_route("/api/v1/{section}/{path:path}", methods=["GET", "POST", "PUT", "DELETE", "PATCH"])
 async def proxy(section: str, path: str, request: Request) -> Any:
     target = _ROUTES.get(section)
     if not target:
-        raise HTTPException(404, f"unknown section {section}")
+        log.warning(
+            "proxy.unknown_section",
+            section=section,
+            path=path,
+            method=request.method,
+            hint="api-gateway image may be stale" if section == "admin" else "",
+        )
+        raise HTTPException(404, _unknown_section_detail(section, path))
     url = f"{target}/api/v1/{section}/{path}"
     return await _forward(request, url)
 
@@ -378,9 +407,38 @@ async def proxy(section: str, path: str, request: Request) -> Any:
 async def proxy_root(section: str, request: Request) -> Any:
     target = _ROUTES.get(section)
     if not target:
-        raise HTTPException(404, f"unknown section {section}")
+        log.warning(
+            "proxy.unknown_section",
+            section=section,
+            method=request.method,
+            hint="api-gateway image may be stale" if section == "admin" else "",
+        )
+        raise HTTPException(404, _unknown_section_detail(section))
     url = f"{target}/api/v1/{section}"
     return await _forward(request, url)
+
+
+@app.on_event("startup")
+async def _log_admin_routes() -> None:
+    """Print every registered admin-* route on startup.
+
+    This is the single most useful piece of forensic data when a
+    deployment reports "unknown section admin": one `docker compose
+    logs api-gateway --tail 50` answers "does this container have the
+    llm_admin_proxy route or not?" without any further digging.
+    """
+    admin_routes = sorted(
+        getattr(r, "path", "")
+        for r in app.routes
+        if "/admin" in getattr(r, "path", "")
+    )
+    log.info(
+        "api_gateway.admin_routes_registered",
+        count=len(admin_routes),
+        routes=admin_routes,
+    )
+    if not any("llm_admin_proxy" in str(getattr(r, "endpoint", "")) for r in app.routes):
+        log.warning("api_gateway.llm_admin_proxy_missing")
 
 
 async def _forward(request: Request, url: str) -> Any:
