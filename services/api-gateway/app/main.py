@@ -35,11 +35,13 @@ from forgemind_common import (
     get_logger,
     get_settings,
     get_user,
+    hash_password,
     list_users,
     setup_logging,
     update_agent_config,
     update_default_config,
     upsert_user,
+    verify_password,
 )
 from forgemind_common.auth import create_access_token, require_user, require_admin
 from forgemind_common.observability import install_metrics
@@ -134,6 +136,57 @@ async def login(req: LoginRequest) -> dict:
 @app.get("/api/v1/auth/me")
 async def me(user=Depends(require_user)) -> dict:
     return {"sub": user.sub, "role": user.role}
+
+
+class ChangePasswordRequest(BaseModel):
+    old_password: str
+    new_password: str
+
+
+@app.post("/api/v1/auth/change-password")
+async def change_password(req: ChangePasswordRequest, user=Depends(require_user)) -> dict:
+    """Change the currently logged-in user's password.
+
+    Two cases:
+
+      1. User exists in the persistent store — verify ``old_password``
+         against the stored bcrypt hash, then ``upsert_user`` with the
+         new password. The user keeps their existing role.
+
+      2. User is an env-var bootstrap user (their identity isn't in the
+         store yet) — verify ``old_password`` via ``env_lookup`` and,
+         on success, ``upsert_user`` to materialize them in the store
+         with the new password. From that point on the store entry
+         takes precedence over the env var.
+
+    On success we DO NOT issue a new JWT — the existing one is bound
+    to the username/role, both of which are unchanged.
+    """
+    # Basic validation. Don't leak which arm failed for old/new pair.
+    if not req.new_password or len(req.new_password) < 8:
+        raise HTTPException(400, "new password must be at least 8 characters")
+    if req.new_password == req.old_password:
+        raise HTTPException(400, "new password must differ from old password")
+
+    # Case 1: user lives in the persistent store.
+    stored = get_user(user.sub)
+    if stored is not None:
+        if not verify_password(req.old_password, stored.password_hash):
+            log.info("auth.change_password.invalid_old", username=user.sub, source="store")
+            raise HTTPException(401, "old password is incorrect")
+        upsert_user(username=user.sub, password=req.new_password, role=stored.role)
+        log.info("auth.change_password.ok", username=user.sub, source="store")
+        return {"status": "ok", "source": "store"}
+
+    # Case 2: env-var bootstrap user — verify old password via env_lookup,
+    # then promote them to the store with the new password.
+    role = env_lookup(user.sub, req.old_password)
+    if role is None:
+        log.info("auth.change_password.invalid_old", username=user.sub, source="env")
+        raise HTTPException(401, "old password is incorrect")
+    upsert_user(username=user.sub, password=req.new_password, role=role)
+    log.info("auth.change_password.ok", username=user.sub, source="env_promoted")
+    return {"status": "ok", "source": "env_promoted"}
 
 
 # ----------------------------------------------------------------------

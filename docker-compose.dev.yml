@@ -1,0 +1,110 @@
+# Development override — hot-reload for Python services and the
+# frontend without rebuilding container images.
+#
+# Apply alongside the base compose file:
+#
+#   docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d
+#
+# What this changes:
+#   * Mounts each Python service's source from the host into the
+#     container at /app/app (and shared/ at /app/shared), so editing
+#     a .py file on the host is immediately visible inside the
+#     container.
+#   * Switches the CMD to `uvicorn --reload`, so uvicorn reloads
+#     workers on every file change.
+#   * Mounts the frontend source so vite dev server can serve it
+#     directly with HMR (port 5173 inside the container now runs
+#     vite, not nginx).
+#
+# This means new routes like `llm_admin_proxy` — or any future
+# change to a service handler — take effect on `docker compose
+# restart api-gateway` (or just save-the-file, with --reload), and
+# you never need `docker compose build --no-cache` again during
+# day-to-day development.
+#
+# For production / CI, use only `docker-compose.yml`.
+
+services:
+  api-gateway:
+    volumes:
+      - ./services/api-gateway/app:/app/app
+      - ./shared:/app/shared
+      - agent-config:/app/.runtime
+    command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload", "--reload-dir", "/app/app", "--reload-dir", "/app/shared"]
+
+  llm-gateway:
+    volumes:
+      - ./services/llm-gateway/app:/app/app
+      - ./shared:/app/shared
+      - agent-config:/app/.runtime
+    command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload", "--reload-dir", "/app/app", "--reload-dir", "/app/shared"]
+
+  ai-orchestrator:
+    volumes:
+      - ./services/ai-orchestrator/app:/app/app
+      - ./shared:/app/shared
+      - agent-config:/app/.runtime
+    command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload", "--reload-dir", "/app/app", "--reload-dir", "/app/shared"]
+
+  rca-service:
+    volumes:
+      - ./services/rca-service/app:/app/app
+      - ./shared:/app/shared
+      - agent-config:/app/.runtime
+    command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload", "--reload-dir", "/app/app", "--reload-dir", "/app/shared"]
+
+  workflow-engine:
+    volumes:
+      - ./services/workflow-engine/app:/app/app
+      - ./shared:/app/shared
+      - agent-config:/app/.runtime
+    command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload", "--reload-dir", "/app/app", "--reload-dir", "/app/shared"]
+
+  chatops-service:
+    volumes:
+      - ./services/chatops-service/app:/app/app
+      - ./shared:/app/shared
+      - agent-config:/app/.runtime
+    command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload", "--reload-dir", "/app/app", "--reload-dir", "/app/shared"]
+
+  reporting-service:
+    volumes:
+      - ./services/reporting-service/app:/app/app
+      - ./shared:/app/shared
+      - agent-config:/app/.runtime
+    command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload", "--reload-dir", "/app/app", "--reload-dir", "/app/shared"]
+
+  predictive-maintenance:
+    volumes:
+      - ./services/predictive-maintenance/app:/app/app
+      - ./shared:/app/shared
+      - agent-config:/app/.runtime
+    command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload", "--reload-dir", "/app/app", "--reload-dir", "/app/shared"]
+
+  notification-service:
+    volumes:
+      - ./services/notification-service/app:/app/app
+      - ./shared:/app/shared
+      - agent-config:/app/.runtime
+    command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload", "--reload-dir", "/app/app", "--reload-dir", "/app/shared"]
+
+  anomaly-detection:
+    volumes:
+      - ./services/anomaly-detection/app:/app/app
+      - ./shared:/app/shared
+    command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload", "--reload-dir", "/app/app", "--reload-dir", "/app/shared"]
+
+  telemetry-ingestion:
+    volumes:
+      - ./services/telemetry-ingestion/app:/app/app
+      - ./shared:/app/shared
+    command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload", "--reload-dir", "/app/app", "--reload-dir", "/app/shared"]
+
+  telemetry-simulator:
+    volumes:
+      - ./services/telemetry-simulator/app:/app/app
+      - ./shared:/app/shared
+    # simulator has its own start command; we still want --reload behavior
+    # via watchfiles if it's a long-running script. If your simulator
+    # doesn't use uvicorn, override the command in your local override
+    # rather than here.

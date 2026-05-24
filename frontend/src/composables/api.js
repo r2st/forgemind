@@ -1,4 +1,5 @@
 import axios from 'axios'
+import { useAuth } from './auth'
 
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_BASE || '/api/v1',
@@ -11,7 +12,48 @@ api.interceptors.request.use((cfg) => {
   return cfg
 })
 
+// On 401 from the api-gateway, the token is missing or expired.
+// Clear the session (reactive — App.vue and Topbar immediately
+// flip to the signed-out state) and bounce the user to /login
+// with a `redirect` query param so they land back where they
+// were after re-authenticating.
+//
+// We use a hard navigation rather than vue-router here because
+// importing the router from a composable creates a cycle; the
+// hard nav also resets any half-loaded component state.
+api.interceptors.response.use(
+  (r) => r,
+  (err) => {
+    const status = err?.response?.status
+    if (status === 401 || status === 403) {
+      const path = window.location.pathname + window.location.search + window.location.hash
+      // Don't loop if we're already on /login (e.g. the login POST itself failed).
+      if (!window.location.pathname.startsWith('/login')) {
+        const { clearSession } = useAuth()
+        clearSession()
+        const q = path && path !== '/' ? `?redirect=${encodeURIComponent(path)}` : ''
+        window.location.replace(`/login${q}`)
+      }
+    }
+    return Promise.reject(err)
+  },
+)
+
 export default api
+
+export const Auth = {
+  // The login endpoint is special — it must NOT carry a stale
+  // Authorization header from the interceptor, so callers should
+  // use the bare axios instance (see Login.vue).
+  me: () => api.get('/auth/me').then((r) => r.data),
+  changePassword: (oldPassword, newPassword) =>
+    api.post('/auth/change-password', { old_password: oldPassword, new_password: newPassword })
+      .then((r) => r.data),
+  logout: () => {
+    const { clearSession } = useAuth()
+    clearSession()
+  },
+}
 
 export const Incidents = {
   list: (params) => api.get('/incidents', { params }).then((r) => r.data),
@@ -76,26 +118,26 @@ export const LLMGateway = {
   createProvider: (payload) => api.post('/admin/llm/providers', payload).then((r) => r.data),
   updateProvider: (id, payload) => api.put(`/admin/llm/providers/${id}`, payload).then((r) => r.data),
   deleteProvider: (id) => api.delete(`/admin/llm/providers/${id}`).then((r) => r.data),
-  
+
   // Models
   models: () => api.get('/admin/llm/models').then((r) => r.data),
   createModel: (payload) => api.post('/admin/llm/models', payload).then((r) => r.data),
   updateModel: (id, payload) => api.put(`/admin/llm/models/${id}`, payload).then((r) => r.data),
   deleteModel: (id) => api.delete(`/admin/llm/models/${id}`).then((r) => r.data),
-  
+
   // Agent routing
   agentRouting: (agentName) => api.get(`/admin/llm/agents/${agentName}/routing`).then((r) => r.data),
   updateAgentRouting: (agentName, payload) => api.put(`/admin/llm/agents/${agentName}/routing`, payload).then((r) => r.data),
-  
+
   // Agent fallback
   agentFallback: (agentName) => api.get(`/admin/llm/agents/${agentName}/fallback`).then((r) => r.data),
   updateAgentFallback: (agentName, payload) => api.put(`/admin/llm/agents/${agentName}/fallback`, payload).then((r) => r.data),
-  
+
   // Analytics
   usage: (params) => api.get('/admin/llm/usage', { params }).then((r) => r.data),
   cost: (params) => api.get('/admin/llm/cost', { params }).then((r) => r.data),
   audit: (params) => api.get('/admin/llm/audit', { params }).then((r) => r.data),
-  
+
   // Health
   health: () => api.get('/admin/llm/health').then((r) => r.data),
 }
